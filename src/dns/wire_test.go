@@ -1,4 +1,4 @@
-package dns2
+package dns
 
 import (
 	"net"
@@ -35,5 +35,6 @@ func TestQueryRoot(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parse: %s", err)
 	}
-	t.Logf("msg: %s\n", msg)
+	s := msg.String()
+	t.Logf("msg: \n %s\n", s)
 }

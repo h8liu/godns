@@ -1,7 +1,8 @@
-package dns2
+package dns
 
 import (
 	"strings"
+	"fmt"
 )
 
 // immutable 
@@ -19,6 +20,9 @@ func (e *NameError) Error() string {
 }
 
 func (n *Name) String() string {
+	if n == nil {
+		fmt.Println("nil lables")
+	}
 	if len(n.labels) > 0 {
 		return strings.Join(n.labels, ".")
 	}

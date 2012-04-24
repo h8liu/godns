@@ -1,139 +1,66 @@
 package dns
 
-import (
-	"bytes"
-	"encoding/binary"
-	"io"
+type Ques struct {
+	Name  *Name
+	Type  uint16
+	Class uint16
+}
+
+type RR struct {
+	Name  *Name
+	Type  uint16
+	Class uint16
+	TTL   uint32
+	RData []byte
+}
+
+const (
+	A     = 1
+	NS    = 2
+	MD    = 3
+	MF    = 4
+	CNAME = 5
+	SOA   = 6
+	MB    = 7
+	MG    = 8
+	MR    = 9
+	NULL  = 10
+	WKS   = 11
+	PTR   = 12
+	HINFO = 13
+	MINFO = 14
+	MX    = 15
+	TXT   = 16
 )
 
-// This package implements the DNS message format (RFC1035)
+const (
+	F_RESPONSE  = 0x1 << 15
+	F_OPMASK    = 0x3 << 11
+	F_AA        = 0x1 << 10
+	F_TC        = 0x1 << 9
+	F_RD        = 0x1 << 8
+	F_RA        = 0x1 << 7
+	F_RCODEMASK = 0xf
+)
 
-type Message struct {
-	ID                 uint16
-	MsgType            uint16 // 0 is query, 1 is response
-	Opcode             uint16
-	Authoritative      bool
-	Truncated          bool
-	RecursionDesired   bool
-	RecursionAvailable bool
-	RespCode           uint16
+const (
+	OPQUERY  = 0 << 11
+	OPIQUERY = 1 << 11
+	OPSTATUS = 2 << 11
+)
 
-	Questions  []Question
-	Answers    []RR
-	Authority  []RR
-	Additional []RR
-}
+const (
+	RCODE_OKAY         = 0
+	RCODE_FORMATERROR  = 1
+	RCODE_SERVERFAIL   = 2
+	RCODE_NAMEERROR    = 3
+	RCODE_NOTIMPLEMENT = 4
+	RCODE_REFUSED      = 5
+)
 
-// Reads a raw DNS message from a Reader
-func parseMessage(r packetReader) (msg Message, er error) {
-	// Message ID
-	er = binary.Read(r.buf, binary.BigEndian, &msg.ID)
-	if er != nil {
-		return msg, er
-	}
-	// Message flags
-	var flags uint16
-	er = binary.Read(r.buf, binary.BigEndian, &flags)
-	msg.MsgType = flags & (1 << 15)
-	msg.Opcode = flags & (0xf << 11)
-	msg.Authoritative = (flags & (1 << 10)) != 0
-	msg.Truncated = (flags & (1 << 9)) != 0
-	msg.RecursionDesired = (flags & (1 << 8)) != 0
-	msg.RecursionAvailable = (flags & (1 << 7)) != 0
-	msg.RespCode = flags & 0x0f
-
-	// Data
-	var counts [4]uint16
-	er = binary.Read(r.buf, binary.BigEndian, counts[:])
-	if er != nil {
-		return msg, er
-	}
-
-	// Questions
-	msg.Questions, er = readQuestions(r, counts[0])
-	if er != nil {
-		return msg, er
-	}
-	msg.Answers, er = readRecords(r, counts[1])
-	if er != nil {
-		return msg, er
-	}
-	msg.Authority, er = readRecords(r, counts[2])
-	if er != nil {
-		return msg, er
-	}
-	msg.Additional, er = readRecords(r, counts[3])
-	return msg, er
-}
-
-// Decodes a DNS packet
-func DecodeMessage(packet []byte) (msg *Message, er error) {
-	reader := newPacketReader(packet)
-	m, er := parseMessage(reader)
-	return &m, er
-}
-
-// Reads a DNS packet from a reader (usually a network connection)
-func RecvMessage(r io.Reader) (msg *Message, er error) {
-	packet := make([]byte, 512)
-	length, er := r.Read(packet[:])
-	if er != nil {
-		return nil, er
-	}
-	return DecodeMessage(packet[:length])
-}
-
-func (msg Message) write(w io.Writer) error {
-	// message ID
-	er := binary.Write(w, binary.BigEndian, msg.ID)
-	if er != nil {
-		return er
-	}
-	// message flags
-	var flags uint16
-	flags = msg.MsgType | msg.Opcode | msg.RespCode
-	if msg.Authoritative {
-		flags |= FlagAuthoritative
-	}
-	if msg.Truncated {
-		flags |= FlagTruncated
-	}
-	if msg.RecursionDesired {
-		flags |= FlagRecDesired
-	}
-	er = binary.Write(w, binary.BigEndian, flags)
-
-	// Item counts
-	count := uint16(len(msg.Questions))
-	er = binary.Write(w, binary.BigEndian, count)
-	count = uint16(len(msg.Answers))
-	er = binary.Write(w, binary.BigEndian, count)
-	count = uint16(len(msg.Authority))
-	er = binary.Write(w, binary.BigEndian, count)
-	count = uint16(len(msg.Additional))
-	er = binary.Write(w, binary.BigEndian, count)
-
-	// Data
-	for _, q := range msg.Questions {
-		er = q.Write(w)
-	}
-	for _, r := range msg.Answers {
-		er = r.Write(w)
-	}
-	for _, r := range msg.Authority {
-		er = r.Write(w)
-	}
-	for _, r := range msg.Additional {
-		er = r.Write(w)
-	}
-
-	return er
-}
-
-// Writes a DNS message in wire format
-func (msg *Message) SendMessage(w io.Writer) error {
-	buf := bytes.NewBuffer(nil)
-	msg.write(buf)
-	_, er := w.Write(buf.Bytes())
-	return er
-}
+const (
+	IN = 1
+	CS = 2
+	CH = 3
+	HS = 4
+)
