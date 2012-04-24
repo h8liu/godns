@@ -1,9 +1,9 @@
 package dns
 
 import (
-	"io"
-  "bytes"
+	"bytes"
 	"encoding/binary"
+	"io"
 )
 
 // This package implements the DNS message format (RFC1035)
@@ -68,17 +68,19 @@ func parseMessage(r packetReader) (msg DnsMessage, er error) {
 
 // Decodes a DNS packet
 func DecodeMessage(packet []byte) (msg *DnsMessage, er error) {
-  reader := newPacketReader(packet)
-  m, er := parseMessage(reader)
-  return &m, er
+	reader := newPacketReader(packet)
+	m, er := parseMessage(reader)
+	return &m, er
 }
 
 // Reads a DNS packet from a reader (usually a network connection)
 func RecvMessage(r io.Reader) (msg *DnsMessage, er error) {
-  packet := make([]byte, 512)
-  length, er := r.Read(packet[:])
-  if er != nil { return nil, er }
-  return DecodeMessage(packet[:length])
+	packet := make([]byte, 512)
+	length, er := r.Read(packet[:])
+	if er != nil {
+		return nil, er
+	}
+	return DecodeMessage(packet[:length])
 }
 
 func (msg DnsMessage) write(w io.Writer) error {
@@ -129,11 +131,9 @@ func (msg DnsMessage) write(w io.Writer) error {
 }
 
 // Writes a DNS message in wire format
-func (msg *DnsMessage)SendMessage(w io.Writer) error {
-  buf := bytes.NewBuffer(nil)
-  msg.write(buf)
-  _, er := w.Write(buf.Bytes())
-  return er
+func (msg *DnsMessage) SendMessage(w io.Writer) error {
+	buf := bytes.NewBuffer(nil)
+	msg.write(buf)
+	_, er := w.Write(buf.Bytes())
+	return er
 }
-
-

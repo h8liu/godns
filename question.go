@@ -1,10 +1,11 @@
 package dns
 
 import (
-	"io"
 	"encoding/binary"
+	"io"
 )
 
+// A query question
 type Question struct {
 	Name  []string
 	Type  uint16

@@ -1,10 +1,10 @@
 package dns
 
 import (
-	"errors"
-	"io"
-	"fmt"
 	"encoding/binary"
+	"errors"
+	"fmt"
+	"io"
 )
 
 func writeLabel(w io.Writer, label string) error {

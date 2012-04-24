@@ -1,17 +1,17 @@
 package dns
 
 import (
-  "bytes"
+	"bytes"
 )
 
 type packetReader struct {
-  buf *bytes.Buffer
-  packet []byte
+	buf    *bytes.Buffer
+	packet []byte
 }
 
 func newPacketReader(packet []byte) packetReader {
-  var p packetReader
-  p.buf = bytes.NewBuffer(packet)
-  p.packet = packet
-  return p
+	var p packetReader
+	p.buf = bytes.NewBuffer(packet)
+	p.packet = packet
+	return p
 }
