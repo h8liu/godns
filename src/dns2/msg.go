@@ -24,7 +24,7 @@ func QuesMsg(n string, t uint16) (ret *Msg, err error) {
 		make([]RR, 0),
 		make([]RR, 0)}
 	ret.Ques = append(ret.Ques, Ques{name, t, IN}) // copy in
-    ret.RandID()
+	ret.RandID()
 
 	return ret, nil
 }
