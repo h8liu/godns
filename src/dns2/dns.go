@@ -10,13 +10,13 @@ type Msg struct {
 }
 
 type Ques struct {
-	Name  string
+	Name  Name
 	Type  uint16
 	Class uint16
 }
 
 type RR struct {
-	Name  string
+	Name  Name
 	Type  uint16
 	Class uint16
 	TTL   uint32
@@ -49,3 +49,6 @@ const (
 	HS = 4
 )
 
+type Name struct {
+	label []string
+}
