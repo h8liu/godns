@@ -8,7 +8,7 @@ import (
 
 // This package implements the DNS message format (RFC1035)
 
-type DnsMessage struct {
+type Message struct {
 	ID                 uint16
 	MsgType            uint16 // 0 is query, 1 is response
 	Opcode             uint16
@@ -25,7 +25,7 @@ type DnsMessage struct {
 }
 
 // Reads a raw DNS message from a Reader
-func parseMessage(r packetReader) (msg DnsMessage, er error) {
+func parseMessage(r packetReader) (msg Message, er error) {
 	// Message ID
 	er = binary.Read(r.buf, binary.BigEndian, &msg.ID)
 	if er != nil {
@@ -67,14 +67,14 @@ func parseMessage(r packetReader) (msg DnsMessage, er error) {
 }
 
 // Decodes a DNS packet
-func DecodeMessage(packet []byte) (msg *DnsMessage, er error) {
+func DecodeMessage(packet []byte) (msg *Message, er error) {
 	reader := newPacketReader(packet)
 	m, er := parseMessage(reader)
 	return &m, er
 }
 
 // Reads a DNS packet from a reader (usually a network connection)
-func RecvMessage(r io.Reader) (msg *DnsMessage, er error) {
+func RecvMessage(r io.Reader) (msg *Message, er error) {
 	packet := make([]byte, 512)
 	length, er := r.Read(packet[:])
 	if er != nil {
@@ -83,7 +83,7 @@ func RecvMessage(r io.Reader) (msg *DnsMessage, er error) {
 	return DecodeMessage(packet[:length])
 }
 
-func (msg DnsMessage) write(w io.Writer) error {
+func (msg Message) write(w io.Writer) error {
 	// message ID
 	er := binary.Write(w, binary.BigEndian, msg.ID)
 	if er != nil {
@@ -131,7 +131,7 @@ func (msg DnsMessage) write(w io.Writer) error {
 }
 
 // Writes a DNS message in wire format
-func (msg *DnsMessage) SendMessage(w io.Writer) error {
+func (msg *Message) SendMessage(w io.Writer) error {
 	buf := bytes.NewBuffer(nil)
 	msg.write(buf)
 	_, er := w.Write(buf.Bytes())
