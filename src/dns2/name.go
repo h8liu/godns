@@ -6,7 +6,7 @@ import (
 
 // immutable 
 type Name struct {
-	label []string
+	labels []string
 }
 
 type NameError struct {
@@ -19,8 +19,8 @@ func (e *NameError) Error() string {
 }
 
 func (n *Name) String() string {
-	if len(n.label) > 0 {
-		return strings.Join(n.label, ".")
+	if len(n.labels) > 0 {
+		return strings.Join(n.labels, ".")
 	}
 	return "."
 }

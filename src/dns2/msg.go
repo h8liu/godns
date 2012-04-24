@@ -33,11 +33,12 @@ func (m *Msg) RandID() {
 	m.ID = uint16(rand.Uint32())
 }
 
-func (m *Msg) ToWire() (raw []byte, err error) {
-	w := new(writer)
+func (m *Msg) ToWire() ([]byte, error) {
+	w := new(wireBuf)
 	e := w.writeMsg(m)
 	if e != nil {
 		return nil, e
 	}
-	return w.toWire(), nil
+	return w.wire(), nil
 }
+
