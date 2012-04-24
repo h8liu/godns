@@ -1,13 +1,13 @@
 package dns
 
 import (
-	"os"
+	"errors"
 	"io"
 	"fmt"
 	"encoding/binary"
 )
 
-func writeLabel(w io.Writer, label string) os.Error {
+func writeLabel(w io.Writer, label string) error {
 	l := len(label)
 	if l >= 256 {
 		return fmt.Errorf("Label %s too long", label)
@@ -20,7 +20,7 @@ func writeLabel(w io.Writer, label string) os.Error {
 	return er
 }
 
-func readLabels(r packetReader) (labels []string, er os.Error) {
+func readLabels(r packetReader) (labels []string, er error) {
 	labels = make([]string, 0)
 
 	for {
@@ -48,7 +48,7 @@ func readLabels(r packetReader) (labels []string, er os.Error) {
 			labels2, er := readLabels(r2)
 			return append(labels, labels2...), er
 		default:
-			return nil, os.NewError("Invalid label specification")
+			return nil, errors.New("Invalid label specification")
 		}
 	}
 	panic("Unreachable")

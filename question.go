@@ -1,7 +1,6 @@
 package dns
 
 import (
-	"os"
 	"io"
 	"encoding/binary"
 )
@@ -13,7 +12,7 @@ type Question struct {
 }
 
 // Writes a question in wire format
-func (q *Question) Write(w io.Writer) os.Error {
+func (q *Question) Write(w io.Writer) error {
 	for _, label := range q.Name {
 		er := writeLabel(w, label)
 		if er != nil {
@@ -32,7 +31,7 @@ func (q *Question) Write(w io.Writer) os.Error {
 	return er
 }
 
-func ReadQuestion(r packetReader) (q Question, er os.Error) {
+func ReadQuestion(r packetReader) (q Question, er error) {
 	q.Name, er = readLabels(r)
 	if er != nil {
 		return q, er
@@ -46,7 +45,7 @@ func ReadQuestion(r packetReader) (q Question, er os.Error) {
 	return q, er
 }
 
-func readQuestions(r packetReader, n uint16) (q []Question, er os.Error) {
+func readQuestions(r packetReader, n uint16) (q []Question, er error) {
 	q = make([]Question, n)
 	for i := uint16(0); i < n; i++ {
 		q[i], er = ReadQuestion(r)
@@ -64,7 +63,7 @@ type RR struct {
 }
 
 // Write a Resource Record in wire format
-func (r *RR) Write(w io.Writer) os.Error {
+func (r *RR) Write(w io.Writer) error {
 	er := r.Query.Write(w)
 	if er != nil {
 		return er
@@ -85,7 +84,7 @@ func (r *RR) Write(w io.Writer) os.Error {
 	return er
 }
 
-func readRecord(r packetReader) (rec RR, er os.Error) {
+func readRecord(r packetReader) (rec RR, er error) {
 	// read question
 	rec.Query, er = ReadQuestion(r)
 	if er != nil {
@@ -109,7 +108,7 @@ func readRecord(r packetReader) (rec RR, er os.Error) {
 	return rec, er
 }
 
-func readRecords(r packetReader, n uint16) (recs []RR, er os.Error) {
+func readRecords(r packetReader, n uint16) (recs []RR, er error) {
 	recs = make([]RR, n)
 	var i uint16
 	for i = 0; i < n; i++ {
