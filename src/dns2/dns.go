@@ -1,22 +1,13 @@
 package dns2
 
-type Msg struct {
-	ID    uint16
-	Flags uint16
-	Ques  []Ques
-	Answ  []RR
-	Auth  []RR
-	Addi  []RR
-}
-
 type Ques struct {
-	Name  Name
+	Name  *Name
 	Type  uint16
 	Class uint16
 }
 
 type RR struct {
-	Name  Name
+	Name  *Name
 	Type  uint16
 	Class uint16
 	TTL   uint32
@@ -29,7 +20,7 @@ const (
 	MD    = 3
 	MF    = 4
 	CNAME = 5
-	SOA   = 66
+	SOA   = 6
 	MB    = 7
 	MG    = 8
 	MR    = 9
@@ -49,6 +40,3 @@ const (
 	HS = 4
 )
 
-type Name struct {
-	label []string
-}

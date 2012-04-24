@@ -42,9 +42,6 @@ func test() (err error) {
 	}
 
 	raddr := &net.UDPAddr{net.ParseIP("127.0.0.1"), 5344}
-	if err != nil {
-		return err
-	}
 
 	buf := []byte("hello, world")
 

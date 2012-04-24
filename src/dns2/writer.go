@@ -48,7 +48,7 @@ func (w *writer) writeLabel(s string) (n int) {
 	return m + 1
 }
 
-func (w *writer) writeName(n Name) {
+func (w *writer) writeName(n *Name) {
 	sum := 0
 	for _, s := range n.label {
 		sum += w.writeLabel(s)
@@ -59,7 +59,7 @@ func (w *writer) writeName(n Name) {
 	w.writeUint8(0)
 }
 
-func (w *writer) writeRR(rr RR) {
+func (w *writer) writeRR(rr *RR) {
 	w.writeName(rr.Name)
 	w.writeUint16(rr.Type)
 	w.writeUint16(rr.Class)
@@ -72,8 +72,11 @@ func (w *writer) writeRR(rr RR) {
 	w.writeBytes(rr.RData)
 }
 
-func (w *writer) writerQues(q Ques) {
+func (w *writer) writeQues(q *Ques) {
 	w.writeName(q.Name)
 	w.writeUint16(q.Type)
 	w.writeUint16(q.Class)
+}
+
+func (w *writer) writeMsg(m *Msg) {
 }
