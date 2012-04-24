@@ -31,4 +31,9 @@ func TestQueryRoot(t *testing.T) {
 		t.Fatalf("recv: %s", err)
 	}
 	t.Logf("recv from: %s %d bytes\n", addr, n)
+	msg, err = FromWire(buf[:n])
+	if err != nil {
+		t.Fatalf("parse: %s", err)
+	}
+	t.Logf("msg: %s\n", msg)
 }

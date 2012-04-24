@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-    "strings"
-    "io"
+	"io"
+	"strings"
 )
 
 type wireBuf struct {
@@ -17,7 +17,7 @@ type MsgError struct {
 }
 
 type ParseError struct {
-    s string
+	s string
 }
 
 func (w *wireBuf) writeUint8(i uint8) {
@@ -70,13 +70,12 @@ func (w *wireBuf) writeName(n *Name) {
 	w.writeUint8(0)
 }
 
-
 func (m *MsgError) Error() string {
 	return fmt.Sprintf("dns message: %s", m.s)
 }
 
 func (m *ParseError) Error() string {
-    return fmt.Sprintf("parse message: %s", m.s)
+	return fmt.Sprintf("parse message: %s", m.s)
 }
 
 func (w *wireBuf) writeRR(rr *RR) (err error) {
@@ -157,137 +156,201 @@ func (w *wireBuf) wire() []byte {
 }
 
 func (w *wireBuf) fill(wire []byte) {
-    w.buf.Reset()
-    w.buf.Write(wire)
+	w.buf.Reset()
+	w.buf.Write(wire)
 }
 
 func (w *wireBuf) readUint8() (ret uint8, err error) {
-    e := binary.Read(&w.buf, binary.BigEndian, &ret)
-    if e != nil {
-        return 0, e
-    }
-    return
+	e := binary.Read(&w.buf, binary.BigEndian, &ret)
+	if e != nil {
+		return 0, e
+	}
+	return
 }
 
 func (w *wireBuf) readUint16() (ret uint16, err error) {
-    e := binary.Read(&w.buf, binary.BigEndian, &ret)
-    if e != nil {
-        return 0, e
-    }
-    return
+	e := binary.Read(&w.buf, binary.BigEndian, &ret)
+	if e != nil {
+		return 0, e
+	}
+	return
 }
 
 func (w *wireBuf) readUint32() (ret uint32, err error) {
-    e := binary.Read(&w.buf, binary.BigEndian, &ret)
-    if e != nil {
-        return 0, e
-    }
-    return
+	e := binary.Read(&w.buf, binary.BigEndian, &ret)
+	if e != nil {
+		return 0, e
+	}
+	return
 }
 
 func (w *wireBuf) readBytes(buf []byte) (err error) {
-    n, e := w.buf.Read(buf)
-    if e != nil {
-        return e
-    }
-    if n != len(buf) {
-        return io.EOF
-    }
-    return nil
+	n, e := w.buf.Read(buf)
+	if e != nil {
+		return e
+	}
+	if n != len(buf) {
+		return io.EOF
+	}
+	return nil
 }
 
 func fmtLabel(b []byte) (ret string, err error) {
-    s := strings.ToLower(string(b))
-    n := len(s)
-    if n == 0 {
-        return "", &ParseError{"empty label"}
-    }
+	s := strings.ToLower(string(b))
+	n := len(s)
+	if n == 0 {
+		return "", &ParseError{"empty label"}
+	}
 
-    if s[0] == '-' {
-        return "", &ParseError{"label starts with dash"}
-    }
-    if s[len(s)-1] == '-' {
-        return "", &ParseError{"label ends with dash"}
-    }
+	if s[0] == '-' {
+		return "", &ParseError{"label starts with dash"}
+	}
+	if s[len(s)-1] == '-' {
+		return "", &ParseError{"label ends with dash"}
+	}
 
-    for _, c := range s {
-        switch {
-        default:
-            return "", &ParseError{"label has special characters"}
-        case 'a' <= c && c <= 'z':
-        case '0' <= c && c <= '9':
-        case c == '_':
-        case c == '-':
-        }
-    }
+	for _, c := range s {
+		switch {
+		default:
+			return "", &ParseError{"label has special characters"}
+		case 'a' <= c && c <= 'z':
+		case '0' <= c && c <= '9':
+		case c == '_':
+		case c == '-':
+		}
+	}
 
-    return s, nil
+	return s, nil
 }
 
 func (w *wireBuf) readName() (n *Name, err error) {
-    sum := 0
-    labels := make([]string, 0)
-    for {
-        n, e := w.readUint8()
-        if e != nil {
-            return nil, e
-        }
-        if n == 0 {
-            break
-        }
-        sum += int(n) + 1
-        if n > 63 {
-            return nil, &ParseError{"label too long"}
-        }
-        if sum > 255 {
-            return nil, &ParseError{"name too long"}
-        }
-        b := make([]byte, n)
-        e = w.readBytes(b)
-        if e != nil {
-            return nil, e
-        }
-        s, e := fmtLabel(b)
-        if e != nil {
-            return nil, e
-        }
-        labels = append(labels, s)
-    }
+	sum := 0
+	labels := make([]string, 0)
+	for {
+		n, e := w.readUint8()
+		if e != nil {
+			return nil, e
+		}
+		if n == 0 {
+			break
+		}
+		sum += int(n) + 1
+		if n > 63 {
+			return nil, &ParseError{"label too long"}
+		}
+		if sum > 255 {
+			return nil, &ParseError{"name too long"}
+		}
+		b := make([]byte, n)
+		e = w.readBytes(b)
+		if e != nil {
+			return nil, e
+		}
+		s, e := fmtLabel(b)
+		if e != nil {
+			return nil, e
+		}
+		labels = append(labels, s)
+	}
 
-    return &Name{labels}, nil
+	return &Name{labels}, nil
 }
 
-func (w *wireBuf) readRR() (rr *RR, err error) {
-    rr = nil
-    var ret *RR = new(RR)
-    ret.Name, err = w.readName()
-    if err != nil {
-        return
-    }
-    ret.Type, err = w.readUint16()
-    if err != nil {
-        return
-    }
-    ret.Class, err = w.readUint16()
-    if err != nil {
-        return
-    }
-    ret.TTL, err = w.readUint32()
-    if err != nil {
-        return
-    }
-    n, err := w.readUint16()
-    ret.RData = make([]byte, n)
-    err = w.readBytes(ret.RData)
-    if err != nil {
-        return
-    }
-    return ret, nil
+func (w *wireBuf) readRR(ret *RR) (err error) {
+	ret.Name, err = w.readName()
+	if err != nil {
+		return
+	}
+	ret.Type, err = w.readUint16()
+	if err != nil {
+		return
+	}
+	ret.Class, err = w.readUint16()
+	if err != nil {
+		return
+	}
+	ret.TTL, err = w.readUint32()
+	if err != nil {
+		return
+	}
+	n, err := w.readUint16()
+	ret.RData = make([]byte, n)
+	err = w.readBytes(ret.RData)
+	if err != nil {
+		return
+	}
+	return nil
 }
 
-func (w *wireBuf) readQues() (q *Ques, err error) {
-    q = nil
-    var ret *Ques = new(Ques)
-    // TODO
-    return ret, nil
+func (w *wireBuf) readQues(ret *Ques) (err error) {
+	ret.Name, err = w.readName()
+	if err != nil {
+		return
+	}
+	ret.Type, err = w.readUint16()
+	if err != nil {
+		return
+	}
+	ret.Class, err = w.readUint16()
+	if err != nil {
+		return
+	}
+	return nil
+}
+
+func (w *wireBuf) readMsg(m *Msg) (e error) {
+	m.ID, e = w.readUint16()
+	if e != nil {
+		return
+	}
+	m.Flags, e = w.readUint16()
+	if e != nil {
+		return
+	}
+	qdCount, e := w.readUint16()
+	if e != nil {
+		return
+	}
+	anCount, e := w.readUint16()
+	if e != nil {
+		return
+	}
+	nsCount, e := w.readUint16()
+	if e != nil {
+		return
+	}
+	arCount, e := w.readUint16()
+	if e != nil {
+		return
+	}
+	m.Ques = make([]Ques, qdCount)
+	m.Answ = make([]RR, anCount)
+	m.Auth = make([]RR, nsCount)
+	m.Addi = make([]RR, arCount)
+	var zero uint16 = 0
+	for i := zero; i < qdCount; i++ {
+		e = w.readQues(&m.Ques[i])
+		if e != nil {
+			return
+		}
+	}
+	for i := zero; i < anCount; i++ {
+		e = w.readRR(&m.Answ[i])
+		if e != nil {
+			return
+		}
+	}
+	for i := zero; i < nsCount; i++ {
+		e = w.readRR(&m.Auth[i])
+		if e != nil {
+			return
+		}
+	}
+	for i := zero; i < nsCount; i++ {
+		e = w.readRR(&m.Addi[i])
+		if e != nil {
+			return
+		}
+	}
+	return nil
 }
