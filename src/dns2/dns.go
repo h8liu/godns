@@ -34,9 +34,33 @@ const (
 )
 
 const (
+	F_RESPONSE  = 0x1 << 15
+	F_OPMASK    = 0x3 << 11
+	F_AA        = 0x1 << 10
+	F_TC        = 0x1 << 9
+	F_RD        = 0x1 << 8
+	F_RA        = 0x1 << 7
+	F_RCODEMASK = 0xf
+)
+
+const (
+	OPQUERY  = 0 << 11
+	OPIQUERY = 1 << 11
+	OPSTATUS = 2 << 11
+)
+
+const (
+	RCODE_OKAY         = 0
+	RCODE_FORMATERROR  = 1
+	RCODE_SERVERFAIL   = 2
+	RCODE_NAMEERROR    = 3
+	RCODE_NOTIMPLEMENT = 4
+	RCODE_REFUSED      = 5
+)
+
+const (
 	IN = 1
 	CS = 2
 	CH = 3
 	HS = 4
 )
-

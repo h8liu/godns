@@ -3,6 +3,7 @@ package dns2
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 )
 
 type writer struct {
@@ -59,17 +60,26 @@ func (w *writer) writeName(n *Name) {
 	w.writeUint8(0)
 }
 
-func (w *writer) writeRR(rr *RR) {
+type MsgError struct {
+	s string
+}
+
+func (m *MsgError) Error() string {
+	return fmt.Sprintf("dns message: %s", m.s)
+}
+
+func (w *writer) writeRR(rr *RR) (err error) {
 	w.writeName(rr.Name)
 	w.writeUint16(rr.Type)
 	w.writeUint16(rr.Class)
 	w.writeUint32(rr.TTL)
 	n := len(rr.RData)
 	if n > 0xffff {
-		panic("Rdata too long")
+		return &MsgError{"Rdata too long"}
 	}
 	w.writeUint16(uint16(n))
 	w.writeBytes(rr.RData)
+	return nil
 }
 
 func (w *writer) writeQues(q *Ques) {
@@ -78,5 +88,59 @@ func (w *writer) writeQues(q *Ques) {
 	w.writeUint16(q.Class)
 }
 
-func (w *writer) writeMsg(m *Msg) {
+func (w *writer) writeMsg(m *Msg) (err error) {
+	w.writeUint16(m.ID)
+	w.writeUint16(m.Flags)
+
+	n := len(m.Ques)
+	if n > 0xffff {
+		return &MsgError{"too many questions"}
+	}
+	w.writeUint16(uint16(n))
+
+	n = len(m.Answ)
+	if n > 0xffff {
+		return &MsgError{"too many answers"}
+	}
+	w.writeUint16(uint16(n))
+
+	n = len(m.Auth)
+	if n > 0xffff {
+		return &MsgError{"too many authorities"}
+	}
+	w.writeUint16(uint16(n))
+
+	n = len(m.Addi)
+	if n > 0xffff {
+		return &MsgError{"too many additionals"}
+	}
+	w.writeUint16(uint16(n))
+
+	for _, q := range m.Ques {
+		w.writeQues(&q)
+	}
+	for _, rr := range m.Answ {
+		e := w.writeRR(&rr)
+		if e != nil {
+			return e
+		}
+	}
+	for _, rr := range m.Auth {
+		e := w.writeRR(&rr)
+		if e != nil {
+			return e
+		}
+	}
+	for _, rr := range m.Addi {
+		e := w.writeRR(&rr)
+		if e != nil {
+			return e
+		}
+	}
+
+	return nil
+}
+
+func (w *writer) toWire() []byte {
+	return w.buf.Bytes()
 }
