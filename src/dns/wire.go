@@ -308,14 +308,16 @@ func (r *reader) readRdata(c, t, n uint16) (ret rdata, e error) {
 	if c == IN {
 		switch t {
 		default:
-			ret = new(RdAny)
+			ret = new(RdBytes)
 		case A:
-			ret = new(RdA)
-		case NS:
-			ret = new(RdNS)
+			ret = new(RdIP)
+        case CNAME, NS:
+			ret = new(RdName)
+        case TXT:
+            ret = new(RdBytes)
 		}
 	} else {
-		ret = new(RdAny)
+		ret = new(RdBytes)
 	}
 
 	err := ret.readFrom(r, n)
