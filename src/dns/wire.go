@@ -306,12 +306,12 @@ func (r *reader) readRR(ret *RR) (err error) {
 
 func (r *reader) readRdata(c, t, n uint16) (ret rdata, e error) {
 	if c == IN {
-		switch {
+		switch t {
 		default:
 			ret = new(RdAny)
-		case t == A:
+		case A:
 			ret = new(RdA)
-		case t == NS:
+		case NS:
 			ret = new(RdNS)
 		}
 	} else {

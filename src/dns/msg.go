@@ -32,54 +32,54 @@ func QuesMsg(n string, t uint16) (ret *Msg, err error) {
 }
 
 func TypeStr(t uint16) string {
-	switch {
-	case t == A:
+	switch t {
+	case A:
 		return "a"
-	case t == NS:
+	case NS:
 		return "ns"
-	case t == MD:
+	case MD:
 		return "md"
-	case t == MF:
+	case MF:
 		return "mf"
-	case t == CNAME:
+	case CNAME:
 		return "cname"
-	case t == SOA:
+	case SOA:
 		return "soa"
-	case t == MB:
+	case MB:
 		return "mb"
-	case t == MG:
+	case MG:
 		return "mg"
-	case t == MR:
+	case MR:
 		return "mr"
-	case t == NULL:
+	case NULL:
 		return "null"
-	case t == WKS:
+	case WKS:
 		return "mks"
-	case t == PTR:
+	case PTR:
 		return "ptr"
-	case t == HINFO:
+	case HINFO:
 		return "hinfo"
-	case t == MINFO:
+	case MINFO:
 		return "minfo"
-	case t == MX:
+	case MX:
 		return "mx"
-	case t == TXT:
+	case TXT:
 		return "txt"
-	case t == AAAA:
+	case AAAA:
 		return "aaaa"
 	}
 	return fmt.Sprintf("t%d", t)
 }
 
 func ClassStr(t uint16) string {
-	switch {
-	case t == IN:
+	switch t {
+	case IN:
 		return "in"
-	case t == CS:
+	case CS:
 		return "cs"
-	case t == CH:
+	case CH:
 		return "ch"
-	case t == HS:
+	case HS:
 		return "hs"
 	}
 	return fmt.Sprintf("s%d", t)
@@ -180,16 +180,16 @@ func (m *Msg) Pson(p *pson.StrPrinter) {
 	rcode := m.Flags & F_RCODEMASK
 	if rcode != RCODE_OKAY {
 		var rs string
-		switch {
-		case rcode == RCODE_FORMATERROR:
+		switch rcode {
+		case RCODE_FORMATERROR:
 			rs = "format-err"
-		case rcode == RCODE_SERVERFAIL:
+		case RCODE_SERVERFAIL:
 			rs = "server-fail"
-		case rcode == RCODE_NAMEERROR:
+		case RCODE_NAMEERROR:
 			rs = "name-err"
-		case rcode == RCODE_NOTIMPLEMENT:
+		case RCODE_NOTIMPLEMENT:
 			rs = "not-impl"
-		case rcode == RCODE_REFUSED:
+		case RCODE_REFUSED:
 			rs = "refused"
 		default:
 			rs = fmt.Sprintf("unknown(%d)", rcode)
