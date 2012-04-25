@@ -31,6 +31,6 @@ func TestPson(t *testing.T) {
 	testToken(t, "a \n   b", "'a \n   b'")
 	testToken(t, "a{", "'a{'")
 	testToken(t, "}b", "'}b'")
-	testToken(t, "'", "'\\''")
-	testToken(t, "\\", "'\\\\'")
+	testToken(t, "'", "''''")
+	testToken(t, "\\", "\\")
 }

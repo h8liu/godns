@@ -65,6 +65,8 @@ func TypeString(t uint16) string {
 		return "mx"
 	case t == TXT:
 		return "txt"
+	case t == AAAA:
+		return "aaaa"
 	}
 	return "-"
 }

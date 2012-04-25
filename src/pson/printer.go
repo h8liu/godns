@@ -25,16 +25,19 @@ func (e *Printer) emit(s string) (err error) {
 }
 
 func isNormal(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+
+	if s[0] == '\'' {
+		return false
+	} // starts with quote
+
 	for _, c := range s {
 		if !(c >= '!' && c <= '~') {
-			return false
+			return false // has other chars
 		}
-		switch {
-		case c == '\'':
-			return false
-		case c == '\\':
-			return false
-		case c == '}' || c == '{':
+		if c == '}' || c == '{' {
 			return false
 		}
 	}
@@ -45,8 +48,7 @@ func Tokenize(s string) (t string) {
 	if isNormal(s) {
 		return s
 	}
-	s = strings.Replace(s, "\\", "\\\\", -1)
-	s = strings.Replace(s, "'", "\\'", -1)
+	s = strings.Replace(s, "'", "''", -1)
 	return "'" + s + "'"
 }
 
