@@ -13,7 +13,7 @@ type writer struct {
 }
 
 type reader struct {
-	buf *bytes.Reader
+	buf    *bytes.Reader
 	seeker *bytes.Reader
 }
 
@@ -160,9 +160,9 @@ func (w *writer) wire() []byte {
 	return w.buf.Bytes()
 }
 
-func newReader(wire []byte) *reader{
+func newReader(wire []byte) *reader {
 	return &reader{bytes.NewReader(wire),
-			bytes.NewReader(wire)}
+		bytes.NewReader(wire)}
 }
 
 func (r *reader) readUint8() (ret uint8, err error) {
@@ -232,7 +232,6 @@ func (r *reader) readName() (n *Name, err error) {
 	sum := 0
 	labels := make([]string, 0)
 	rin := r.buf
-	// rin := *(r.buf) // duplicate the reader for free seeking
 	for {
 		n, e := rin.ReadByte()
 		if e != nil {
@@ -241,11 +240,12 @@ func (r *reader) readName() (n *Name, err error) {
 		if n == 0 {
 			break
 		}
-		if n & 0xc0 == 0xc0 {
+		if n&0xc0 == 0xc0 {
 			c2, e := rin.ReadByte()
-			if e != nil { return nil, e }
+			if e != nil {
+				return nil, e
+			}
 			off := ((uint16(n) & 0x3f) << 8) + uint16(c2)
-			fmt.Printf("seek to %d\n", off)
 			rin = r.seeker
 			rin.Seek(int64(off), 0)
 			continue
@@ -262,7 +262,6 @@ func (r *reader) readName() (n *Name, err error) {
 		if e != nil {
 			return nil, e
 		}
-		fmt.Println(string(b))
 		s, e := fmtLabel(b)
 		if e != nil {
 			return nil, e
@@ -278,7 +277,6 @@ func (r *reader) readRR(ret *RR) (err error) {
 	if err != nil {
 		return
 	}
-	fmt.Println(ret.Name)
 	ret.Type, err = r.readUint16()
 	if err != nil {
 		return

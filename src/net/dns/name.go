@@ -1,8 +1,8 @@
 package dns
 
 import (
-	"strings"
 	"fmt"
+	"strings"
 )
 
 // immutable 

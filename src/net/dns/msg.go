@@ -1,10 +1,9 @@
 package dns
 
 import (
+	"fmt"
 	"math/rand"
 	"pson"
-	"bytes"
-	"fmt"
 )
 
 type Msg struct {
@@ -84,66 +83,98 @@ func ClassString(t uint16) string {
 	return "-"
 }
 
-func (q *Ques) Pson(p *pson.Printer) error {
+func (q *Ques) Pson(p *pson.StrPrinter) {
 	if q.Class == IN {
-		return p.Print(q.Name.String(), TypeString(q.Type))
+		p.Print(q.Name.String(), TypeString(q.Type))
+	} else {
+		p.Print(q.Name.String(), TypeString(q.Type),
+			ClassString(q.Class))
 	}
-	return p.Print(q.Name.String(), TypeString(q.Type),
-		ClassString(q.Class))
 }
 
-func (rr *RR) Pson(p *pson.Printer) error {
+func (rr *RR) Pson(p *pson.StrPrinter) {
+	// TODO: print RData
 	if rr.Class == IN {
-		return p.Print(rr.Name.String(), TypeString(rr.Type),
+		p.Print(rr.Name.String(), TypeString(rr.Type),
 			fmt.Sprintf("%d", rr.TTL))
+	} else {
+		p.Print(rr.Name.String(), TypeString(rr.Type),
+			fmt.Sprintf("%d", rr.TTL), ClassString(rr.Class))
 	}
-
-	return p.Print(rr.Name.String(), TypeString(rr.Type),
-		fmt.Sprintf("%d", rr.TTL), ClassString(rr.Class))
 }
 
-func psonSection(p *pson.Printer, rrs []RR, sec string) (e error) {
-	fmt.Printf("%s %d\n", sec, len(rrs))
-	if len(rrs) == 0 { return nil }
-	e = p.PrintIndent(sec); if e != nil { return }
+func psonSection(p *pson.StrPrinter, rrs []RR, sec string) {
+	if len(rrs) == 0 {
+		return
+	}
+	p.PrintIndent(sec)
 	for _, rr := range rrs {
-		e = rr.Pson(p); if e != nil { return }
+		rr.Pson(p)
 	}
-	e = p.EndIndent(); if e != nil { return }
-	return nil
+	p.EndIndent()
 }
 
-
-func (m *Msg) Pson(p *pson.Printer) (e error){
-	e = p.Print("id", fmt.Sprintf("%d", m.ID)); if e != nil { return }
+func (m *Msg) Pson(p *pson.StrPrinter) {
+	p.Print("id", fmt.Sprintf("%d", m.ID))
+	fstr := make([]string, 0)
+	switch {
+	case (m.Flags & F_RESPONSE) == F_RESPONSE:
+		fstr = append(fstr, "resp")
+	case (m.Flags & F_OPMASK) == OPIQUERY:
+		fstr = append(fstr, "op=iquery")
+	case (m.Flags & F_OPMASK) == OPSTATUS:
+		fstr = append(fstr, "op=status")
+	case (m.Flags & F_AA) == F_AA:
+		fstr = append(fstr, "auth")
+	case (m.Flags & F_TC) == F_TC:
+		fstr = append(fstr, "trunc")
+	case (m.Flags & F_RD) == F_RD:
+		fstr = append(fstr, "rec-desired")
+	case (m.Flags & F_RA) == F_RA:
+		fstr = append(fstr, "rec-avail")
+	}
+	if len(fstr) > 0 {
+		p.Print("flag", fstr...)
+	}
+	rcode := m.Flags & F_RCODEMASK
+	if rcode != RCODE_OKAY {
+		var rs string
+		switch {
+		case rcode == RCODE_FORMATERROR:
+			rs = "format-err"
+		case rcode == RCODE_SERVERFAIL:
+			rs = "server-fail"
+		case rcode == RCODE_NAMEERROR:
+			rs = "name-err"
+		case rcode == RCODE_NOTIMPLEMENT:
+			rs = "not-impl"
+		case rcode == RCODE_REFUSED:
+			rs = "refused"
+		default:
+			rs = fmt.Sprintf("unknown(%d)", rcode)
+		}
+		p.Print("rcode", rs)
+	}
 
 	if len(m.Ques) > 0 {
-		e = p.PrintIndent("question"); if e != nil { return }
+		p.PrintIndent("question")
 		for _, q := range m.Ques {
-			e = q.Pson(p); if e != nil { return }
+			q.Pson(p)
 		}
-		e = p.EndIndent(); if e != nil { return }
+		p.EndIndent()
 	}
 
-	e = psonSection(p, m.Answ, "answer"); if e != nil { return }
-	e = psonSection(p, m.Auth, "authority"); if e != nil { return }
-	e = psonSection(p, m.Addi, "additional"); if e != nil { return }
-
-	return nil
+	psonSection(p, m.Answ, "answer")
+	psonSection(p, m.Auth, "authority")
+	psonSection(p, m.Addi, "additional")
 }
 
 func (m *Msg) String() string {
-	buf := new(bytes.Buffer)
-	p := pson.NewPrinter(buf)
-	p.Print("dns.msg")
-	p.Indent()
-
+	p := pson.NewStrPrinter()
+	p.PrintIndent("dns.msg")
 	m.Pson(p)
-
 	p.EndIndent()
-	p.End()
-
-	return string(buf.Bytes())
+	return p.End()
 }
 
 func (m *Msg) RandID() {
