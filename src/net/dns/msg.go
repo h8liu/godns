@@ -86,61 +86,63 @@ func ClassStr(t uint16) string {
 }
 
 func TTLStr(t uint32) string {
-    if t == 0 { return "0" }
-    var ret string = ""
-    sec := t % 60
-    min := t / 60 % 60
-    hour := t / 3600 % 24
-    day := t / 3600 / 24
-    if day > 0 {
-        ret += fmt.Sprintf("%dd", day)
-    }
-    if hour > 0 {
-        ret += fmt.Sprintf("%dh", hour)
-    }
-    if min > 0 {
-        ret += fmt.Sprintf("%dm", min)
-    }
-    if sec > 0 {
-        ret += fmt.Sprintf("%d", sec)
-    }
-    return ret
+	if t == 0 {
+		return "0"
+	}
+	var ret string = ""
+	sec := t % 60
+	min := t / 60 % 60
+	hour := t / 3600 % 24
+	day := t / 3600 / 24
+	if day > 0 {
+		ret += fmt.Sprintf("%dd", day)
+	}
+	if hour > 0 {
+		ret += fmt.Sprintf("%dh", hour)
+	}
+	if min > 0 {
+		ret += fmt.Sprintf("%dm", min)
+	}
+	if sec > 0 {
+		ret += fmt.Sprintf("%d", sec)
+	}
+	return ret
 }
 
 func (q *Ques) Pson(p *pson.StrPrinter) {
-    slist := make([]string, 0)
-    if q.Type != A {
-        slist = append(slist, TypeStr(q.Type))
-    }
-    if q.Class != IN {
-        slist = append(slist, ClassStr(q.Type))
-    }
+	slist := make([]string, 0)
+	if q.Type != A {
+		slist = append(slist, TypeStr(q.Type))
+	}
+	if q.Class != IN {
+		slist = append(slist, ClassStr(q.Type))
+	}
 
-    p.Print(q.Name.String(), slist...)
+	p.Print(q.Name.String(), slist...)
 }
 
 func (rr *RR) Pson(p *pson.StrPrinter) {
 	// TODO: print RData
-    slist := make([]string, 0)
-    slist = append(slist, TypeStr(rr.Type))
-    var expand bool = false
-    if rr.rdata != nil {
-        rlist, b := rr.rdata.Pson()
-        for _, s := range rlist {
-            slist = append(slist, s)
-        }
-        expand = b
-    }
-    slist = append(slist, TTLStr(rr.TTL))
+	slist := make([]string, 0)
+	slist = append(slist, TypeStr(rr.Type))
+	var expand bool = false
+	if rr.rdata != nil {
+		rlist, b := rr.rdata.Pson()
+		for _, s := range rlist {
+			slist = append(slist, s)
+		}
+		expand = b
+	}
+	slist = append(slist, TTLStr(rr.TTL))
 	if rr.Class != IN {
-        slist = append(slist, ClassStr(rr.Class))
-    }
-    p.Print(rr.Name.String(), slist...)
-    if expand {
-        p.Indent()
-        rr.rdata.PsonMore(p)
-        p.EndIndent()
-    }
+		slist = append(slist, ClassStr(rr.Class))
+	}
+	p.Print(rr.Name.String(), slist...)
+	if expand {
+		p.Indent()
+		rr.rdata.PsonMore(p)
+		p.EndIndent()
+	}
 }
 
 func psonSection(p *pson.StrPrinter, rrs []RR, sec string) {

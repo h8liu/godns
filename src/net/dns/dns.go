@@ -12,7 +12,7 @@ type RR struct {
 	Class uint16
 	TTL   uint32
 	RData []byte
-    rdata rdata
+	rdata rdata
 }
 
 const (
