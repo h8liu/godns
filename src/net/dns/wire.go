@@ -295,6 +295,15 @@ func (r *reader) readRR(ret *RR) (err error) {
 	if err != nil {
 		return
 	}
+
+    ret.rdata = nil
+    if ret.Class == IN {
+        ret.rdata, err = r.readRdata(ret.Type, ret.RData)
+        if err != nil {
+            return
+        }
+    }
+
 	return nil
 }
 

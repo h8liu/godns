@@ -12,7 +12,7 @@ func TestQueryRoot(t *testing.T) {
 	}
 	defer conn.Close()
 	raddr := &net.UDPAddr{net.ParseIP("198.41.0.4"), 53}
-	msg, err := QuesMsg(".", NS)
+	msg, err := QuesMsg("liulonnie.net", A)
 	if msg == nil || err != nil {
 		t.Fatalf("QuesMsg: %s", err)
 	}

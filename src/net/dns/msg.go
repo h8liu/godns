@@ -31,7 +31,7 @@ func QuesMsg(n string, t uint16) (ret *Msg, err error) {
 	return ret, nil
 }
 
-func TypeString(t uint16) string {
+func TypeStr(t uint16) string {
 	switch {
 	case t == A:
 		return "a"
@@ -68,10 +68,10 @@ func TypeString(t uint16) string {
 	case t == AAAA:
 		return "aaaa"
 	}
-	return "-"
+	return fmt.Sprintf("t%d", t)
 }
 
-func ClassString(t uint16) string {
+func ClassStr(t uint16) string {
 	switch {
 	case t == IN:
 		return "in"
@@ -82,27 +82,65 @@ func ClassString(t uint16) string {
 	case t == HS:
 		return "hs"
 	}
-	return "-"
+	return fmt.Sprintf("s%d", t)
+}
+
+func TTLStr(t uint32) string {
+    if t == 0 { return "0" }
+    var ret string = ""
+    sec := t % 60
+    min := t / 60 % 60
+    hour := t / 3600 % 24
+    day := t / 3600 / 24
+    if day > 0 {
+        ret += fmt.Sprintf("%dd", day)
+    }
+    if hour > 0 {
+        ret += fmt.Sprintf("%dh", hour)
+    }
+    if min > 0 {
+        ret += fmt.Sprintf("%dm", min)
+    }
+    if sec > 0 {
+        ret += fmt.Sprintf("%d", sec)
+    }
+    return ret
 }
 
 func (q *Ques) Pson(p *pson.StrPrinter) {
-	if q.Class == IN {
-		p.Print(q.Name.String(), TypeString(q.Type))
-	} else {
-		p.Print(q.Name.String(), TypeString(q.Type),
-			ClassString(q.Class))
-	}
+    slist := make([]string, 0)
+    if q.Type != A {
+        slist = append(slist, TypeStr(q.Type))
+    }
+    if q.Class != IN {
+        slist = append(slist, ClassStr(q.Type))
+    }
+
+    p.Print(q.Name.String(), slist...)
 }
 
 func (rr *RR) Pson(p *pson.StrPrinter) {
 	// TODO: print RData
-	if rr.Class == IN {
-		p.Print(rr.Name.String(), TypeString(rr.Type),
-			fmt.Sprintf("%d", rr.TTL))
-	} else {
-		p.Print(rr.Name.String(), TypeString(rr.Type),
-			fmt.Sprintf("%d", rr.TTL), ClassString(rr.Class))
-	}
+    slist := make([]string, 0)
+    slist = append(slist, TypeStr(rr.Type))
+    var expand bool = false
+    if rr.rdata != nil {
+        rlist, b := rr.rdata.Pson()
+        for _, s := range rlist {
+            slist = append(slist, s)
+        }
+        expand = b
+    }
+    slist = append(slist, TTLStr(rr.TTL))
+	if rr.Class != IN {
+        slist = append(slist, ClassStr(rr.Class))
+    }
+    p.Print(rr.Name.String(), slist...)
+    if expand {
+        p.Indent()
+        rr.rdata.PsonMore(p)
+        p.EndIndent()
+    }
 }
 
 func psonSection(p *pson.StrPrinter, rrs []RR, sec string) {
@@ -159,16 +197,16 @@ func (m *Msg) Pson(p *pson.StrPrinter) {
 	}
 
 	if len(m.Ques) > 0 {
-		p.PrintIndent("question")
+		p.PrintIndent("ques")
 		for _, q := range m.Ques {
 			q.Pson(p)
 		}
 		p.EndIndent()
 	}
 
-	psonSection(p, m.Answ, "answer")
-	psonSection(p, m.Auth, "authority")
-	psonSection(p, m.Addi, "additional")
+	psonSection(p, m.Answ, "answ")
+	psonSection(p, m.Auth, "auth")
+	psonSection(p, m.Addi, "addi")
 }
 
 func (m *Msg) String() string {

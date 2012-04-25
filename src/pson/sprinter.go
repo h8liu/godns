@@ -29,6 +29,12 @@ func (e *StrPrinter) Print(s string, args ...string) {
 	}
 }
 
+func (e *StrPrinter) Indent() {
+	err := e.p.Indent()
+	if err != nil {
+		panic(err)
+	}
+}
 func (e *StrPrinter) PrintIndent(s string, args ...string) {
 	err := e.p.PrintIndent(s, args...)
 	if err != nil {
