@@ -15,32 +15,32 @@ type RR struct {
 }
 
 func (rr *RR) RdIP() *RdIP {
-    if rr.Class == IN {
-        if rr.Type == A {
-            return rr.rdata.(*RdIP)
-        }
-    }
-    return nil
+	if rr.Class == IN {
+		if rr.Type == A {
+			return rr.rdata.(*RdIP)
+		}
+	}
+	return nil
 }
 
 func (rr *RR) RdName() *RdName {
-    if rr.Class == IN {
-        switch rr.Type {
-        case CNAME, NS:
-            return rr.rdata.(*RdName)
-        }
-    }
-    return nil
+	if rr.Class == IN {
+		switch rr.Type {
+		case CNAME, NS:
+			return rr.rdata.(*RdName)
+		}
+	}
+	return nil
 }
 
 func (rr *RR) RdBytes() *RdBytes {
-    if rr.Class == IN {
-        switch rr.Type {
-        case TXT:
-            return rr.rdata.(*RdBytes)
-        }
-    }
-    return nil
+	if rr.Class == IN {
+		switch rr.Type {
+		case TXT:
+			return rr.rdata.(*RdBytes)
+		}
+	}
+	return nil
 }
 
 const (

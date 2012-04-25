@@ -311,10 +311,10 @@ func (r *reader) readRdata(c, t, n uint16) (ret rdata, e error) {
 			ret = new(RdBytes)
 		case A:
 			ret = new(RdIP)
-        case CNAME, NS:
+		case CNAME, NS:
 			ret = new(RdName)
-        case TXT:
-            ret = new(RdBytes)
+		case TXT:
+			ret = new(RdBytes)
 		}
 	} else {
 		ret = new(RdBytes)
