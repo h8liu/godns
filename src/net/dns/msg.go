@@ -122,16 +122,11 @@ func (q *Ques) Pson(p *pson.StrPrinter) {
 }
 
 func (rr *RR) Pson(p *pson.StrPrinter) {
-	// TODO: print RData
 	slist := make([]string, 0)
 	slist = append(slist, TypeStr(rr.Type))
-	var expand bool = false
-	if rr.rdata != nil {
-		rlist, b := rr.rdata.Pson()
-		for _, s := range rlist {
-			slist = append(slist, s)
-		}
-		expand = b
+	rlist, expand := rr.rdata.pson()
+	for _, s := range rlist {
+		slist = append(slist, s)
 	}
 	slist = append(slist, TTLStr(rr.TTL))
 	if rr.Class != IN {
@@ -140,7 +135,7 @@ func (rr *RR) Pson(p *pson.StrPrinter) {
 	p.Print(rr.Name.String(), slist...)
 	if expand {
 		p.Indent()
-		rr.rdata.PsonMore(p)
+		rr.rdata.psonMore(p)
 		p.EndIndent()
 	}
 }
@@ -157,11 +152,15 @@ func psonSection(p *pson.StrPrinter, rrs []RR, sec string) {
 }
 
 func (m *Msg) Pson(p *pson.StrPrinter) {
+	if (m.Flags & F_RESPONSE) == F_RESPONSE {
+		p.PrintIndent("dns.resp")
+	} else {
+		p.PrintIndent("dns.query")
+	}
+
 	p.Print("id", fmt.Sprintf("%d", m.ID))
 	fstr := make([]string, 0)
 	switch {
-	case (m.Flags & F_RESPONSE) == F_RESPONSE:
-		fstr = append(fstr, "resp")
 	case (m.Flags & F_OPMASK) == OPIQUERY:
 		fstr = append(fstr, "op=iquery")
 	case (m.Flags & F_OPMASK) == OPSTATUS:
@@ -209,13 +208,13 @@ func (m *Msg) Pson(p *pson.StrPrinter) {
 	psonSection(p, m.Answ, "answ")
 	psonSection(p, m.Auth, "auth")
 	psonSection(p, m.Addi, "addi")
+
+	p.EndIndent()
 }
 
 func (m *Msg) String() string {
 	p := pson.NewStrPrinter()
-	p.PrintIndent("dns.msg")
 	m.Pson(p)
-	p.EndIndent()
 	return p.End()
 }
 

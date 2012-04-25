@@ -88,13 +88,15 @@ func (w *writer) writeRR(rr *RR) (err error) {
 	w.writeUint16(rr.Type)
 	w.writeUint16(rr.Class)
 	w.writeUint32(rr.TTL)
-	n := len(rr.RData)
-	if n > 0xffff {
-		return &MsgError{"Rdata too long"}
+	err = w.writeRdata(rr.rdata)
+	if err != nil {
+		return err
 	}
-	w.writeUint16(uint16(n))
-	w.writeBytes(rr.RData)
 	return nil
+}
+
+func (w *writer) writeRdata(rd rdata) (err error) {
+	panic("not implemented")
 }
 
 func (w *writer) writeQues(q *Ques) {
@@ -290,21 +292,37 @@ func (r *reader) readRR(ret *RR) (err error) {
 		return
 	}
 	n, err := r.readUint16()
-	ret.RData = make([]byte, n)
-	err = r.readBytes(ret.RData)
 	if err != nil {
 		return
 	}
 
-	ret.rdata = nil
-	if ret.Class == IN {
-		ret.rdata, err = r.readRdata(ret.Type, ret.RData)
-		if err != nil {
-			return
-		}
+	ret.rdata, err = r.readRdata(ret.Class, ret.Type, n)
+	if err != nil {
+		return
 	}
 
 	return nil
+}
+
+func (r *reader) readRdata(c, t, n uint16) (ret rdata, e error) {
+	if c == IN {
+		switch {
+		default:
+			ret = new(RdAny)
+		case t == A:
+			ret = new(RdA)
+		case t == NS:
+			ret = new(RdNS)
+		}
+	} else {
+		ret = new(RdAny)
+	}
+
+	err := ret.readFrom(r, n)
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
 func (r *reader) readQues(ret *Ques) (err error) {
