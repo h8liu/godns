@@ -15,20 +15,16 @@ type Msg struct {
 	Addi  []RR
 }
 
-func QuesMsg(n string, t uint16) (ret *Msg, err error) {
-	name, e := NewName(n)
-	if e != nil {
-		return nil, e
-	}
+func QuesMsg(n *Name, t uint16) (ret *Msg) {
 	ret = &Msg{0, 0,
 		make([]Ques, 0),
 		make([]RR, 0),
 		make([]RR, 0),
 		make([]RR, 0)}
-	ret.Ques = append(ret.Ques, Ques{name, t, IN}) // copy in
+	ret.Ques = append(ret.Ques, Ques{n, t, IN}) // copy in
 	ret.RandID()
 
-	return ret, nil
+	return ret
 }
 
 func TypeStr(t uint16) string {
