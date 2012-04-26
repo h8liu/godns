@@ -14,8 +14,8 @@ import (
 type Conn struct {
 	conn      net.PacketConn
 	jobs      map[uint16]*queryJob
-	sendQueue chan *queryJob
-	recvQueue chan *recvBuf
+	sendQueue chan *queryJob // scheduled queries
+	recvQueue chan *recvBuf     // 
 	idRecycle chan uint16
 }
 
@@ -36,7 +36,7 @@ func (e *ConnError) Error() string {
 	return e.s
 }
 
-func (c *Conn) handle(msg *Msg, addr net.Addr) error {
+func (c *Conn) handleRecv(msg *Msg, addr net.Addr) error {
 	switch udpa := addr.(type) {
 	case *net.UDPAddr:
 		ip := udpa.IP.To4()
@@ -70,7 +70,7 @@ func (c *Conn) serve() {
 			if err != nil {
 				// TODO: log parsing error
 			} else {
-				err = c.handle(msg, recv.addr)
+				err = c.handleRecv(msg, recv.addr)
 				if err != nil {
 					// TODO: log handle error
 				}
