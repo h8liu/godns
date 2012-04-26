@@ -109,7 +109,7 @@ func TTLStr(t uint32) string {
 	return ret
 }
 
-func (q *Ques) Pson(p *pson.StrPrinter) {
+func (q *Ques) Pson(p *pson.Printer) {
 	slist := make([]string, 0)
 	if q.Type != A {
 		slist = append(slist, TypeStr(q.Type))
@@ -121,7 +121,7 @@ func (q *Ques) Pson(p *pson.StrPrinter) {
 	p.Print(q.Name.String(), slist...)
 }
 
-func (rr *RR) Pson(p *pson.StrPrinter) {
+func (rr *RR) Pson(p *pson.Printer) {
 	slist := make([]string, 0)
 	slist = append(slist, TypeStr(rr.Type))
 	rlist, expand := rr.rdata.pson()
@@ -140,7 +140,7 @@ func (rr *RR) Pson(p *pson.StrPrinter) {
 	}
 }
 
-func psonSection(p *pson.StrPrinter, rrs []RR, sec string) {
+func psonSection(p *pson.Printer, rrs []RR, sec string) {
 	if len(rrs) == 0 {
 		return
 	}
@@ -151,7 +151,7 @@ func psonSection(p *pson.StrPrinter, rrs []RR, sec string) {
 	p.EndIndent()
 }
 
-func (m *Msg) Pson(p *pson.StrPrinter) {
+func (m *Msg) Pson(p *pson.Printer) {
 	if (m.Flags & F_RESPONSE) == F_RESPONSE {
 		p.PrintIndent("dns.resp")
 	} else {
@@ -213,9 +213,11 @@ func (m *Msg) Pson(p *pson.StrPrinter) {
 }
 
 func (m *Msg) String() string {
-	p := pson.NewStrPrinter()
+	p := pson.NewPrinter()
 	m.Pson(p)
-	return p.End()
+	p.End()
+
+	return p.Fetch()
 }
 
 func (m *Msg) RandID() {

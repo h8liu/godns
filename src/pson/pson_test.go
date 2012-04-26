@@ -1,7 +1,6 @@
 package pson
 
 import (
-	"bytes"
 	"testing"
 )
 
@@ -12,8 +11,7 @@ func testToken(t *testing.T, s string, e string) {
 }
 
 func TestPson(t *testing.T) {
-	buf := new(bytes.Buffer)
-	p := NewPrinter(buf)
+	p := NewPrinter()
 	p.Print("a")
 	p.Print("b", "hi", "yes")
 	p.Indent()
@@ -21,7 +19,7 @@ func TestPson(t *testing.T) {
 	p.EndIndent()
 
 	p.End()
-	s := string(buf.Bytes())
+	s := p.Fetch()
 	expect := "a\nb hi yes {\n    cde\n}\n"
 	if s != expect {
 		t.Errorf("pson:\n %s\nexpect:\n %s", s, expect)

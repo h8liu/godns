@@ -1,27 +1,39 @@
 package pson
 
 import (
+	"bytes"
 	"io"
 	"strings"
 )
 
 type Printer struct {
-	out    io.Writer
+	out    bytes.Buffer
 	indent uint
 	ntoken uint
 }
 
-func NewPrinter(out io.Writer) *Printer {
-	return &Printer{out, 0, 0}
+func NewPrinter() *Printer {
+	return new(Printer)
 }
 
-func (e *Printer) emit(s string) (err error) {
-	t := Tokenize(s)
-	err = e.emitToken(t)
+func (e *Printer) Flush(out io.Writer) (n int, err error) {
+	n, err = out.Write(e.out.Bytes())
 	if err != nil {
-		return err
+		return
 	}
-	return nil
+	e.out.Reset()
+	return
+}
+
+func (e *Printer) Fetch() string {
+	ret := string(e.out.Bytes())
+	e.out.Reset()
+	return ret
+}
+
+func (e *Printer) emit(s string) {
+	t := Tokenize(s)
+	e.emitToken(t)
 }
 
 func isNormal(s string) bool {
@@ -52,7 +64,7 @@ func Tokenize(s string) (t string) {
 	return "'" + s + "'"
 }
 
-func (e *Printer) emitToken(t string) (err error) {
+func (e *Printer) emitToken(t string) {
 	if e.ntoken == 0 {
 		for i := uint(0); i < e.indent; i++ {
 			e.out.Write([]byte("    "))
@@ -60,92 +72,50 @@ func (e *Printer) emitToken(t string) (err error) {
 	} else {
 		e.out.Write([]byte(" "))
 	}
-	_, err = e.out.Write([]byte(t))
-	if err != nil {
-		return err
-	}
+	e.out.Write([]byte(t))
 	e.ntoken++
-	return nil
 }
 
-func (e *Printer) EndLine() (err error) {
-	_, err = e.out.Write([]byte("\n"))
-	if err != nil {
-		return err
-	}
+func (e *Printer) EndLine() {
+	e.out.Write([]byte("\n"))
 	e.ntoken = 0
-	return nil
 }
 
-func (e *Printer) Print(s string, args ...string) (err error) {
+func (e *Printer) Print(s string, args ...string) {
 	if e.ntoken != 0 {
-		err = e.EndLine()
-		if err != nil {
-			return err
-		}
+		e.EndLine()
 	}
-
-	err = e.emit(s)
-	if err != nil {
-		return err
-	}
+	e.emit(s)
 	for _, a := range args {
-		err = e.emit(a)
-		if err != nil {
-			return err
-		}
+		e.emit(a)
 	}
-	return nil
 }
 
-func (e *Printer) PrintIndent(s string, args ...string) (err error) {
-	err = e.Print(s, args...)
-	if err != nil {
-		return err
-	}
-	err = e.Indent()
-	if err != nil {
-		return err
-	}
-	return nil
+func (e *Printer) PrintIndent(s string, args ...string) {
+	e.Print(s, args...)
+	e.Indent()
 }
 
-func (e *Printer) Indent() (err error) {
-	err = e.emitToken("{")
-	if err != nil {
-		return err
-	}
-	err = e.EndLine()
-	if err != nil {
-		return err
-	}
+func (e *Printer) Indent() {
+	e.emitToken("{")
+	e.EndLine()
 	e.indent++
-	return nil
 }
 
-func (e *Printer) EndIndent() (err error) {
+func (e *Printer) EndIndent() {
 	if e.indent == 0 {
-		return nil // no effect
+		return // no effect
 	}
-
 	if e.ntoken != 0 {
-		err = e.EndLine()
-		if err != nil {
-			return err
-		}
+		e.EndLine()
 	}
 	e.indent--
 	e.emitToken("}")
-	err = e.EndLine()
-	if err != nil {
-		return err
-	}
-	return nil
+	e.EndLine()
 }
 
-func (e *Printer) End() (err error) {
+func (e *Printer) End() {
 	if e.ntoken != 0 {
-		return e.EndLine()
+		e.EndLine()
 	}
-	return nil
 }

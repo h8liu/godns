@@ -7,7 +7,7 @@ import (
 
 type rdata interface {
 	pson() ([]string, bool)
-	psonMore(p *pson.StrPrinter)
+	psonMore(p *pson.Printer)
 	writeTo(w *writer) error
 	readFrom(r *reader, n uint16) error
 }
@@ -20,7 +20,7 @@ func (rd *RdBytes) pson() ([]string, bool) {
 	return []string{}, false
 }
 
-func (rd *RdBytes) psonMore(p *pson.StrPrinter) {
+func (rd *RdBytes) psonMore(p *pson.Printer) {
 }
 
 func (rd *RdBytes) writeTo(w *writer) error {
@@ -49,7 +49,7 @@ func (rd *RdIP) pson() ([]string, bool) {
 	return []string{rd.ip.String()}, false
 }
 
-func (rd *RdIP) psonMore(p *pson.StrPrinter) {
+func (rd *RdIP) psonMore(p *pson.Printer) {
 }
 
 func (rd *RdIP) writeTo(w *writer) error {
@@ -76,7 +76,7 @@ func (r *RdName) pson() ([]string, bool) {
 	return []string{r.name.String()}, false
 }
 
-func (rd *RdName) psonMore(p *pson.StrPrinter) {
+func (rd *RdName) psonMore(p *pson.Printer) {
 }
 
 func (rd *RdName) writeTo(w *writer) error {
@@ -89,6 +89,35 @@ func (rd *RdName) readFrom(r *reader, n uint16) (err error) {
 	rd.name, err = r.readName()
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func (rr *RR) RdIP() *RdIP {
+	if rr.Class == IN {
+		if rr.Type == A {
+			return rr.rdata.(*RdIP)
+		}
+	}
+	return nil
+}
+
+func (rr *RR) RdName() *RdName {
+	if rr.Class == IN {
+		switch rr.Type {
+		case CNAME, NS:
+			return rr.rdata.(*RdName)
+		}
+	}
+	return nil
+}
+
+func (rr *RR) RdBytes() *RdBytes {
+	if rr.Class == IN {
+		switch rr.Type {
+		case TXT:
+			return rr.rdata.(*RdBytes)
+		}
 	}
 	return nil
 }
