@@ -12,16 +12,16 @@ func TestQueryRoot(t *testing.T) {
 	}
 	defer conn.Close()
 	raddr := &net.UDPAddr{net.ParseIP("198.41.0.4"), 53}
-    name, err := NewName("liulonnie.net")
-    if err != nil {
-        t.Fatalf("NewName: %s", err)
-    }
+	name, err := NewName("liulonnie.net")
+	if err != nil {
+		t.Fatalf("NewName: %s", err)
+	}
 	msg := QuesMsg(name, A)
 	buf, err := msg.ToWire()
 	if buf == nil || err != nil {
 		t.Fatalf("ToWire: %s", err)
 	}
-    n, err := conn.WriteTo(buf, raddr)
+	n, err := conn.WriteTo(buf, raddr)
 	if err != nil {
 		t.Fatalf("WriteTo: %s", err)
 	}

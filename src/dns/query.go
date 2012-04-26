@@ -2,9 +2,9 @@ package dns
 
 import (
 	"io"
+	"net"
 	"pson"
 	"time"
-    "net"
 )
 
 // a packet handler listens on a local UDP port
@@ -12,51 +12,51 @@ import (
 // when the response is received or on timeout
 // a connection only need to handle direct queries
 type Conn struct {
-    conn net.PacketConn
+	conn net.PacketConn
 }
 
 func (c *Conn) listen() {
-    buf := make([]byte, 512)
-    for {
-        deadline := time.Now().Add(time.Second / 2)
-        c.conn.SetReadDeadline(deadline)
-        n, _, err := c.conn.ReadFrom(buf)
-        if err != nil {
-            msgbuf := buf[:n]
-            _, err = FromWire(msgbuf)
-            if err != nil {
-                // TODO: log parsing error
-            } else {
-                // TODO: queue message back
-                // search for the id
-                // and call back with receiving
-            }
-        } else {
-            // TODO: log network error
-        }
-        // TODO: check all time outs if needed
+	buf := make([]byte, 512)
+	for {
+		deadline := time.Now().Add(time.Second / 2)
+		c.conn.SetReadDeadline(deadline)
+		n, _, err := c.conn.ReadFrom(buf)
+		if err != nil {
+			msgbuf := buf[:n]
+			_, err = FromWire(msgbuf)
+			if err != nil {
+				// TODO: log parsing error
+			} else {
+				// TODO: queue message back
+				// search for the id
+				// and call back with receiving
+			}
+		} else {
+			// TODO: log network error
+		}
+		// TODO: check all time outs if needed
 
-        // TODO: check if it is requested to close
-    }
+		// TODO: check if it is requested to close
+	}
 }
 
 func NewConn() (c *Conn, e error) {
-    conn, err := net.ListenPacket("udp4", ":0")
-    if err != nil {
-        return nil, err
-    }
-    ret := &Conn{conn}
-    go ret.listen()
-    return ret, nil
+	conn, err := net.ListenPacket("udp4", ":0")
+	if err != nil {
+		return nil, err
+	}
+	ret := &Conn{conn}
+	go ret.listen()
+	return ret, nil
 }
 
 func (c *Conn) query(n *Name, t uint16, h IPv4) (*Response, error) {
 	panic("not implemented")
-    // allocate an id
-    // make a query message
-    // pack it
-    // send it out
-    // wait for reply on a channel
+	// allocate an id
+	// make a query message
+	// pack it
+	// send it out
+	// wait for reply on a channel
 
 	return nil, nil
 }
