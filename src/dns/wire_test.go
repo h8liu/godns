@@ -16,7 +16,7 @@ func TestQueryRoot(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewName: %s", err)
 	}
-	msg := QuesMsg(name, A)
+	msg := NewQuesMsg(name, A)
 	buf, err := msg.ToWire()
 	if buf == nil || err != nil {
 		t.Fatalf("ToWire: %s", err)

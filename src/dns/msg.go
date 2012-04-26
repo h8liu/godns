@@ -15,7 +15,7 @@ type Msg struct {
 	Addi  []RR
 }
 
-func QuesMsg(n *Name, t uint16) (ret *Msg) {
+func NewQuesMsg(n *Name, t uint16) (ret *Msg) {
 	ret = &Msg{0, 0,
 		make([]Ques, 0),
 		make([]RR, 0),
