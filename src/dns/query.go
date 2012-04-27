@@ -186,8 +186,12 @@ func (c *Conn) serveRecv() {
 			c.recvQueue <- &recvBuf{buf[:n], addr}
 			buf = make([]byte, 512) // make a new one
 		} else {
-			if !err.(net.Error).Timeout() &&
-				!err.(net.Error).Temporary() {
+			if nerr, b := err.(net.Error); b {
+				if !nerr.Timeout() &&
+					!nerr.Temporary() {
+					c.logError("readFrom", nerr)
+				}
+			} else {
 				c.logError("readFrom", err)
 			}
 		}
