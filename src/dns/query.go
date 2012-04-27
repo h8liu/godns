@@ -177,7 +177,7 @@ func (c *Conn) serve() {
 }
 
 func (c *Conn) serveRecv() {
-	wait := time.Second / 2
+	wait := time.Millisecond
 	buf := make([]byte, 512)
 	for {
 		deadline := time.Now().Add(wait)
@@ -281,9 +281,9 @@ func (c *Conn) QueryHost(h *IPv4, n *Name, t uint16) (
 	return job.resp, nil
 }
 
-func (c *Conn) Query(q Query, out io.Writer) {
+func (c *Conn) Serve(a Asker, out io.Writer) {
 	agent := &agent{pson.NewPrinter(), c, out}
-	agent.query(q)
+	agent.query(a)
 	agent.log.End()
 	if agent.out != nil {
 		agent.log.Flush(agent.out)
@@ -298,9 +298,9 @@ type agent struct {
 	out  io.Writer
 }
 
-func (a *agent) query(q Query) {
-	a.log.PrintIndent(q.name(), q.header()...)
-	q.run(a, a.log)
+func (a *agent) query(asker Asker) {
+	a.log.PrintIndent(asker.name(), asker.header()...)
+	asker.shoot(a, a.log)
 	a.log.EndIndent()
 }
 
@@ -329,22 +329,4 @@ func (a *agent) netQuery(n *Name, t uint16, hosts []IPv4) *Response {
 		}
 	}
 	return nil
-}
-
-type Query interface {
-	run(a *agent, log *pson.Printer)
-	name() string
-	header() []string
-}
-
-// recursively query related records for a domain
-type RecordQuery struct {
-}
-
-// recursively query an IP address for a domain
-type IPQuery struct {
-}
-
-// recursively query a question through a bunch of servers
-type RecurQuery struct {
 }
