@@ -96,7 +96,8 @@ type recvBuf struct {
 }
 
 func (c *Conn) serve() {
-	cleanTicker := time.NewTicker(time.Second / 2) // check every half second
+	// check every half second
+	cleanTicker := time.NewTicker(time.Second / 2)
 	idleTicker := time.NewTicker(time.Millisecond)
 
 	for {

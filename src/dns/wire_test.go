@@ -52,12 +52,13 @@ func TestQuerier(t *testing.T) {
 	}
 	conn.LogToStderr()
 	conn.Start()
-	defer conn.Stop()
 
 	resp, err := conn.QueryHost(ParseIP("198.41.0.4"), name, A)
 	// resp, err := conn.QueryHost(ParseIP("192.168.0.1"), name, A)
 	if err != nil {
 		t.Fatalf("query: %s", err)
 	}
+	conn.Stop()
+
 	t.Logf("msg: %s", resp.Msg)
 }
