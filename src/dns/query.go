@@ -97,10 +97,10 @@ type recvBuf struct {
 
 func (c *Conn) serve() {
 	cleanTicker := time.NewTicker(time.Second / 2) // check every half second
-    idleTicker := time.NewTicker(time.Millisecond)
+	idleTicker := time.NewTicker(time.Millisecond)
 
 	for {
-        didNothing := true
+		didNothing := true
 		// dispatch recv queue
 		for len(c.recvQueue) > 0 {
 			recv := <-c.recvQueue
@@ -113,7 +113,7 @@ func (c *Conn) serve() {
 					c.logError("handle", err)
 				}
 			}
-            didNothing = false
+			didNothing = false
 		}
 
 		if len(cleanTicker.C) > 0 { // time to clean time outs
@@ -131,7 +131,7 @@ func (c *Conn) serve() {
 			}
 
 			<-cleanTicker.C // sechedule next check
-            didNothing = false
+			didNothing = false
 		}
 
 		// send one if possible
@@ -159,16 +159,16 @@ func (c *Conn) serve() {
 				c.jobs[msg.ID] = job
 			}
 
-            didNothing = false
+			didNothing = false
 		}
 
 		if len(c.closeSignal) > 0 {
 			break
 		}
 
-        if didNothing {
-            <-idleTicker.C
-        }
+		if didNothing {
+			<-idleTicker.C
+		}
 	}
 
 	cleanTicker.Stop()
@@ -186,10 +186,10 @@ func (c *Conn) serveRecv() {
 			c.recvQueue <- &recvBuf{buf[:n], addr}
 			buf = make([]byte, 512) // make a new one
 		} else {
-            if !err.(net.Error).Timeout() &&
-                !err.(net.Error).Temporary() {
-			    c.logError("readFrom", err)
-            }
+			if !err.(net.Error).Timeout() &&
+				!err.(net.Error).Temporary() {
+				c.logError("readFrom", err)
+			}
 		}
 
 		if len(c.closeSignal) > 0 {
@@ -213,9 +213,9 @@ func (c *Conn) LogWith(f func(error)) {
 }
 
 func (c *Conn) LogToStderr() {
-    c.LogWith(func(e error) {
-        fmt.Fprintf(os.Stderr, "conn: %s\n", e)
-    })
+	c.LogWith(func(e error) {
+		fmt.Fprintf(os.Stderr, "conn: %s\n", e)
+	})
 }
 
 func (c *Conn) Start() error {
@@ -259,7 +259,7 @@ func NewConn() (c *Conn, e error) {
 }
 
 func (c *Conn) QueryHost(h *IPv4, n *Name, t uint16) (
-        resp *Response, err error) {
+	resp *Response, err error) {
 	job := new(queryJob)
 	job.name = n
 	job.t = t

@@ -2,8 +2,8 @@ package dns
 
 import (
 	"fmt"
+	"net"
 	"pson"
-    "net"
 )
 
 type rdata interface {
@@ -47,18 +47,18 @@ func (ip *IPv4) String() string {
 }
 
 func ParseIP(s string) *IPv4 {
-    nip := net.ParseIP(s)
-    if nip == nil { 
-        return nil
-    }
-    nip = nip.To4()
-    if nip == nil {
-        return nil
-    }
-    
-    ret := new(IPv4)
-    copy(ret[:], nip)
-    return ret
+	nip := net.ParseIP(s)
+	if nip == nil {
+		return nil
+	}
+	nip = nip.To4()
+	if nip == nil {
+		return nil
+	}
+
+	ret := new(IPv4)
+	copy(ret[:], nip)
+	return ret
 }
 
 func (ip *IPv4) Equal(other *IPv4) bool {
