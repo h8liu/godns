@@ -9,19 +9,15 @@ import (
 	"time"
 )
 
-// a packet handler listens on a local UDP port
-// and takes input Queries, it will callback the input Queries' callback
-// when the response is received or on timeout
-// a connection only need to handle direct queries
 type Conn struct {
 	conn        net.PacketConn
 	jobs        map[uint16]*queryJob
 	sendQueue   chan *queryJob // scheduled queries
-	recvQueue   chan *recvBuf  //
+	recvQueue   chan *recvBuf  // received packets
+	errlog      chan error
 	closeSignal chan int
 	recvClosed  chan int
 	serveClosed chan int
-	errlog      chan error
 }
 
 type queryJob struct {
@@ -33,27 +29,42 @@ type queryJob struct {
 	resp     *Response
 }
 
-type ConnError struct {
+type recvBuf struct {
+	buf  []byte
+	addr net.Addr
+}
+
+type Response struct {
+	Msg  *Msg
+	Host IPv4
+	Port uint16
+	Time time.Time
+}
+
+// errors happen on receiving
+type RecvError struct {
 	s string
 }
 
-func (e *ConnError) Error() string {
+func (e *RecvError) Error() string {
 	return e.s
 }
 
-type ServeError struct {
+// encapsulate background thread error
+type BgError struct {
 	s string
 	e error
 }
 
-func (e *ServeError) Error() string {
+func (e *BgError) Error() string {
 	return fmt.Sprintf("%s: %s", e.s, e.e)
 }
 
 func (c *Conn) logError(s string, e error) {
-	c.errlog <- &ServeError{s, e}
+	c.errlog <- &BgError{s, e}
 }
 
+// time out error
 type TimeoutError struct {
 }
 
@@ -66,7 +77,7 @@ func (c *Conn) handleRecv(msg *Msg, addr net.Addr) error {
 	case *net.UDPAddr:
 		ip := udpa.IP.To4()
 		if ip == nil {
-			return &ConnError{"host not ipv4"}
+			return &RecvError{"host not ipv4"}
 		}
 		var ipv4 IPv4
 		copy(ipv4[:], ip[:4])
@@ -74,10 +85,10 @@ func (c *Conn) handleRecv(msg *Msg, addr net.Addr) error {
 
 		job, b := c.jobs[msg.ID]
 		if !b {
-			return &ConnError{"no such id, time out already?"}
+			return &RecvError{"no such id, time out already?"}
 		}
 		if !job.host.Equal(&ipv4) {
-			return &ConnError{"recv from other hosts"}
+			return &RecvError{"recv from other hosts"}
 		}
 
 		job.resp = &Response{msg, ipv4, port, time.Now()}
@@ -85,14 +96,9 @@ func (c *Conn) handleRecv(msg *Msg, addr net.Addr) error {
 
 		delete(c.jobs, msg.ID)
 	default:
-		return &ConnError{"addr not UDP"}
+		return &RecvError{"addr not UDP"}
 	}
 	return nil
-}
-
-type recvBuf struct {
-	buf  []byte
-	addr net.Addr
 }
 
 func (c *Conn) serve() {
@@ -153,7 +159,7 @@ func (c *Conn) serve() {
 			}
 
 			if err != nil {
-				job.signal <- err
+				job.signal <- err // send error
 			} else {
 				// send succeed, waiting now
 				job.deadline = time.Now().Add(time.Second * 5)
@@ -271,31 +277,36 @@ func (c *Conn) QueryHost(h *IPv4, n *Name, t uint16) (
 	job.host = *h
 	job.signal = make(chan error, 1)
 	job.deadline = time.Now()
+	job.resp = nil
 
 	c.sendQueue <- job
-	err = <-job.signal
+	err = <-job.signal // waiting for response
 	if err != nil {
 		return nil, err
 	}
 
+	// resp should be set now
 	return job.resp, nil
 }
 
-func (c *Conn) Serve(a Asker, out io.Writer) {
-	agent := &agent{pson.NewPrinter(), c, out}
-	agent.query(a)
-	agent.log.End()
-	if agent.out != nil {
-		agent.log.Flush(agent.out)
-	}
-}
-
-// will record a tree structure of queries
-// will only handle DirectQuery with conn
+// to handle complex askers
 type agent struct {
 	log  *pson.Printer
 	conn *Conn
 	out  io.Writer
+}
+
+func (c *Conn) Answer(a Asker, out io.Writer) {
+	agent := &agent{pson.NewPrinter(), c, out}
+	agent.query(a)
+	agent.log.End()
+	agent.flush()
+}
+
+func (a *agent) flush() {
+	if a.out != nil {
+		a.log.Flush(a.out)
+	}
 }
 
 func (a *agent) query(asker Asker) {
@@ -304,21 +315,12 @@ func (a *agent) query(asker Asker) {
 	a.log.EndIndent()
 }
 
-type Response struct {
-	Msg  *Msg
-	Host IPv4
-	Port uint16
-	Time time.Time
-}
-
 func (a *agent) netQuery(n *Name, t uint16, hosts []IPv4) *Response {
 	a.log.Print("q", n.String(), TypeStr(t))
 	for _, h := range hosts {
 		a.log.Print("ask", h.String())
 		for i := 0; i < 3; i++ {
-			if a.out != nil {
-				a.log.Flush(a.out)
-			}
+			a.flush() // flush before query
 			r, e := a.conn.QueryHost(&h, n, t)
 			if e == nil {
 				a.log.Print("recv", r.Time.String())

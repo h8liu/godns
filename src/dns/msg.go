@@ -15,6 +15,20 @@ type Msg struct {
 	Addi  []RR
 }
 
+type Ques struct {
+	Name  *Name
+	Type  uint16
+	Class uint16
+}
+
+type RR struct {
+	Name  *Name
+	Type  uint16
+	Class uint16
+	TTL   uint32
+	Rdata rdata
+}
+
 func NewQuesMsg(n *Name, t uint16) (ret *Msg) {
 	ret = &Msg{0, 0,
 		make([]Ques, 0),
@@ -78,7 +92,7 @@ func ClassStr(t uint16) string {
 	case HS:
 		return "hs"
 	}
-	return fmt.Sprintf("s%d", t)
+	return fmt.Sprintf("c%d", t)
 }
 
 func TTLStr(t uint32) string {
@@ -113,14 +127,14 @@ func (q *Ques) Pson(p *pson.Printer) {
 	if q.Class != IN {
 		slist = append(slist, ClassStr(q.Type))
 	}
-
 	p.Print(q.Name.String(), slist...)
 }
 
 func (rr *RR) Pson(p *pson.Printer) {
 	slist := make([]string, 0)
+
 	slist = append(slist, TypeStr(rr.Type))
-	rlist, expand := rr.rdata.pson()
+	rlist, expand := rr.Rdata.pson()
 	for _, s := range rlist {
 		slist = append(slist, s)
 	}
@@ -131,7 +145,7 @@ func (rr *RR) Pson(p *pson.Printer) {
 	p.Print(rr.Name.String(), slist...)
 	if expand {
 		p.Indent()
-		rr.rdata.psonMore(p)
+		rr.Rdata.psonMore(p)
 		p.EndIndent()
 	}
 }

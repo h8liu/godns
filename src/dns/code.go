@@ -1,19 +1,6 @@
 package dns
 
-type Ques struct {
-	Name  *Name
-	Type  uint16
-	Class uint16
-}
-
-type RR struct {
-	Name  *Name
-	Type  uint16
-	Class uint16
-	TTL   uint32
-	rdata rdata
-}
-
+// rdata type codes
 const (
 	A     = 1
 	NS    = 2
@@ -34,6 +21,7 @@ const (
 	AAAA  = 28
 )
 
+// flags structure
 const (
 	F_RESPONSE  = 0x1 << 15
 	F_OPMASK    = 0x3 << 11
@@ -44,12 +32,14 @@ const (
 	F_RCODEMASK = 0xf
 )
 
+// op in flags
 const (
 	OPQUERY  = 0 << 11
 	OPIQUERY = 1 << 11
 	OPSTATUS = 2 << 11
 )
 
+// resp code in flags
 const (
 	RCODE_OKAY         = 0
 	RCODE_FORMATERROR  = 1
@@ -59,6 +49,7 @@ const (
 	RCODE_REFUSED      = 5
 )
 
+// class code
 const (
 	IN = 1
 	CS = 2

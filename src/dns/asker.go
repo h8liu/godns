@@ -10,15 +10,8 @@ type Asker interface {
 	header() []string
 }
 
-// recursively query related records for a domain
-type RecordAsker struct {
-}
-
-// recursively query an IP address for a domain
-type IPAsker struct {
-}
-
 // recursively query a question through a bunch of servers
+// only focus on one single record type
 type RecurAsker struct {
 }
 
@@ -42,4 +35,13 @@ func (q *RecurAsker) name() string {
 
 func (q *RecurAsker) header() []string {
 	return nil
+}
+
+// recursively query related records for a domain
+type RecordAsker struct {
+}
+
+// recursively query an IP address for a domain
+// will also chase down cnames
+type IPAsker struct {
 }

@@ -1,8 +1,6 @@
 package dns
 
 import (
-	"fmt"
-	"net"
 	"pson"
 )
 
@@ -13,6 +11,7 @@ type rdata interface {
 	readFrom(r *reader, n uint16) error
 }
 
+// for rdata of a string of a byte array, like txt records
 type RdBytes struct {
 	data []byte
 }
@@ -34,40 +33,9 @@ func (rd *RdBytes) readFrom(r *reader, n uint16) error {
 	return r.readBytes(rd.data)
 }
 
+// for rdatas of a single ip address, like a records
 type RdIP struct {
 	ip IPv4
-}
-
-// should be treated as immutable
-type IPv4 [4]byte
-
-func (ip *IPv4) String() string {
-	return fmt.Sprintf("%d.%d.%d.%d",
-		ip[0], ip[1], ip[2], ip[3])
-}
-
-func ParseIP(s string) *IPv4 {
-	nip := net.ParseIP(s)
-	if nip == nil {
-		return nil
-	}
-	nip = nip.To4()
-	if nip == nil {
-		return nil
-	}
-
-	ret := new(IPv4)
-	copy(ret[:], nip)
-	return ret
-}
-
-func (ip *IPv4) Equal(other *IPv4) bool {
-	for i, b := range ip {
-		if b != other[i] {
-			return false
-		}
-	}
-	return true
 }
 
 func (rd *RdIP) pson() ([]string, bool) {
@@ -93,6 +61,7 @@ func (rd *RdIP) readFrom(r *reader, n uint16) (err error) {
 	return nil
 }
 
+// for rdatas of a single name, like ns records
 type RdName struct {
 	name *Name
 }
@@ -114,35 +83,6 @@ func (rd *RdName) readFrom(r *reader, n uint16) (err error) {
 	rd.name, err = r.readName()
 	if err != nil {
 		return err
-	}
-	return nil
-}
-
-func (rr *RR) RdIP() *RdIP {
-	if rr.Class == IN {
-		if rr.Type == A {
-			return rr.rdata.(*RdIP)
-		}
-	}
-	return nil
-}
-
-func (rr *RR) RdName() *RdName {
-	if rr.Class == IN {
-		switch rr.Type {
-		case CNAME, NS:
-			return rr.rdata.(*RdName)
-		}
-	}
-	return nil
-}
-
-func (rr *RR) RdBytes() *RdBytes {
-	if rr.Class == IN {
-		switch rr.Type {
-		case TXT:
-			return rr.rdata.(*RdBytes)
-		}
 	}
 	return nil
 }
