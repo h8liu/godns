@@ -6,7 +6,7 @@ import (
 	"io"
 	"net"
 	"os"
-	"pson"
+	"dns/pson"
 	"time"
 )
 
