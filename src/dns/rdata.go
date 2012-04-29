@@ -35,7 +35,7 @@ func (rd *RdBytes) readFrom(r *reader, n uint16) error {
 
 // for rdatas of a single ip address, like a records
 type RdIP struct {
-	ip IPv4
+	ip *IPv4
 }
 
 func (rd *RdIP) pson() ([]string, bool) {
@@ -46,7 +46,7 @@ func (rd *RdIP) psonMore(p *pson.Printer) {
 }
 
 func (rd *RdIP) writeTo(w *writer) error {
-	w.writeBytes(rd.ip[:])
+	w.writeBytes(rd.ip.Bytes())
 	return nil
 }
 
@@ -54,9 +54,12 @@ func (rd *RdIP) readFrom(r *reader, n uint16) (err error) {
 	if n != 4 {
 		return &ParseError{"A rdata: wrong size"}
 	}
-	err = r.readBytes(rd.ip[:])
-	if err != nil {
+	buf := make([]byte, 4)
+	if err = r.readBytes(buf); err != nil {
 		return err
+	}
+	if rd.ip = IPFromBytes(buf); rd.ip == nil {
+		return &ParseError{"make ip from bytes"}
 	}
 	return nil
 }

@@ -5,12 +5,43 @@ import (
 	"net"
 )
 
-// should be treated as immutable
-type IPv4 [4]byte
+// IMPORTANT: should be treated as immutable
+type IPv4 struct {
+	ip [4]byte
+}
+
+func IPFromIP(ip net.IP) *IPv4 {
+	ip4 := ip.To4()
+	if ip4 == nil {
+		return nil
+	}
+	ret := new(IPv4)
+	copy(ret.ip[:], ip4[:4])
+	return ret
+}
+
+func (ip *IPv4) ToIP() net.IP {
+	return net.IPv4(ip.ip[0], ip.ip[1], ip.ip[2], ip.ip[3])
+}
+
+func (ip *IPv4) Bytes() []byte {
+	ret := make([]byte, 4)
+	copy(ret, ip.ip[:])
+	return ret
+}
+
+func IPFromBytes(bytes []byte) *IPv4 {
+	if len(bytes) != 4 {
+		return nil
+	}
+	ret := new(IPv4)
+	copy(ret.ip[:], bytes)
+	return ret
+}
 
 func (ip *IPv4) String() string {
 	return fmt.Sprintf("%d.%d.%d.%d",
-		ip[0], ip[1], ip[2], ip[3])
+		ip.ip[0], ip.ip[1], ip.ip[2], ip.ip[3])
 }
 
 func ParseIP(s string) *IPv4 {
@@ -24,13 +55,13 @@ func ParseIP(s string) *IPv4 {
 	}
 
 	ret := new(IPv4)
-	copy(ret[:], nip)
+	copy(ret.ip[:], nip)
 	return ret
 }
 
 func (ip *IPv4) Equal(other *IPv4) bool {
-	for i, b := range ip {
-		if b != other[i] {
+	for i, b := range ip.ip {
+		if b != other.ip[i] {
 			return false
 		}
 	}

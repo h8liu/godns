@@ -1,6 +1,7 @@
 package dns
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -23,7 +24,7 @@ type Conn struct {
 type queryJob struct {
 	name     *Name
 	t        uint16
-	host     IPv4
+	host     *IPv4
 	deadline time.Time
 	signal   chan error
 	resp     *Response
@@ -36,18 +37,9 @@ type recvBuf struct {
 
 type Response struct {
 	Msg  *Msg
-	Host IPv4
+	Host *IPv4
 	Port uint16
 	Time time.Time
-}
-
-// errors happen on receiving
-type RecvError struct {
-	s string
-}
-
-func (e *RecvError) Error() string {
-	return e.s
 }
 
 // encapsulate background thread error
@@ -75,28 +67,26 @@ func (e *TimeoutError) Error() string {
 func (c *Conn) handleRecv(msg *Msg, addr net.Addr) error {
 	switch udpa := addr.(type) {
 	case *net.UDPAddr:
-		ip := udpa.IP.To4()
+		ip := IPFromIP(udpa.IP)
 		if ip == nil {
-			return &RecvError{"host not ipv4"}
+			return errors.New("host not ipv4")
 		}
-		var ipv4 IPv4
-		copy(ipv4[:], ip[:4])
 		port := uint16(udpa.Port)
 
 		job, b := c.jobs[msg.ID]
 		if !b {
-			return &RecvError{"no such id, time out already?"}
+			return errors.New("no such id, time out already?")
 		}
-		if !job.host.Equal(&ipv4) {
-			return &RecvError{"recv from other hosts"}
+		if !job.host.Equal(ip) {
+			return errors.New("recv from other hosts")
 		}
 
-		job.resp = &Response{msg, ipv4, port, time.Now()}
+		job.resp = &Response{msg, ip, port, time.Now()}
 		job.signal <- nil
 
 		delete(c.jobs, msg.ID)
 	default:
-		return &RecvError{"addr not UDP"}
+		return errors.New("addr not UDP")
 	}
 	return nil
 }
@@ -152,8 +142,7 @@ func (c *Conn) serve() {
 			}
 			buf, err := msg.ToWire()
 			if err == nil {
-				ip := net.IPv4(job.host[0], job.host[1],
-					job.host[2], job.host[3])
+				ip := job.host.ToIP()
 				addr := &net.UDPAddr{ip, 53}
 				_, err = c.conn.WriteTo(buf, addr)
 			}
@@ -274,7 +263,7 @@ func (c *Conn) QueryHost(h *IPv4, n *Name, t uint16) (
 	job := new(queryJob)
 	job.name = n
 	job.t = t
-	job.host = *h
+	job.host = h
 	job.signal = make(chan error, 1)
 	job.deadline = time.Now()
 	job.resp = nil
@@ -311,7 +300,8 @@ func (a *agent) flush() {
 
 func (a *agent) query(asker Asker) {
 	a.log.PrintIndent(asker.name(), asker.header()...)
-	asker.shoot(a, a.log)
+	err := asker.shoot(a)
+	a.log.Print("error", err.Error())
 	a.log.EndIndent()
 }
 
