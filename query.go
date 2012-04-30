@@ -1,12 +1,12 @@
 package dns
 
 import (
+	"dns/pson"
 	"errors"
 	"fmt"
 	"io"
 	"net"
 	"os"
-	"dns/pson"
 	"time"
 )
 
@@ -305,20 +305,17 @@ func (a *agent) query(asker Asker) {
 	a.log.EndIndent()
 }
 
-func (a *agent) netQuery(n *Name, t uint16, hosts []IPv4) *Response {
-	a.log.Print("q", n.String(), TypeStr(t))
-	for _, h := range hosts {
-		a.log.Print("ask", h.String())
-		for i := 0; i < 3; i++ {
-			a.flush() // flush before query
-			r, e := a.conn.QueryHost(&h, n, t)
-			if e == nil {
-				a.log.Print("recv", r.Time.String())
-				r.Msg.Pson(a.log)
-				return r
-			}
-			a.log.Print("error", e.Error())
+func (a *agent) netQuery(n *Name, t uint16, host IPv4) *Response {
+	a.log.Print("q", n.String(), TypeStr(t), fmt.Sprintf("@%s", host))
+	for i := 0; i < 3; i++ {
+		a.flush() // flush before query
+		r, e := a.conn.QueryHost(&host, n, t)
+		if e == nil {
+			a.log.Print("recv", r.Time.String())
+			r.Msg.Pson(a.log)
+			return r
 		}
+		a.log.Print("error", e.Error())
 	}
 	return nil
 }

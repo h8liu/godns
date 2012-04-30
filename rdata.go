@@ -1,7 +1,7 @@
 package dns
 
 import (
-    "dns/pson"
+	"dns/pson"
 )
 
 type rdata interface {

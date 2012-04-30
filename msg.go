@@ -1,9 +1,9 @@
 package dns
 
 import (
+	"dns/pson"
 	"fmt"
 	"math/rand"
-	"dns/pson"
 )
 
 type Msg struct {

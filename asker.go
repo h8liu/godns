@@ -2,6 +2,7 @@ package dns
 
 import (
 	"errors"
+	"math/rand"
 )
 
 type Asker interface {
@@ -23,7 +24,43 @@ type RecurAsker struct {
 
 type ZoneServers struct {
 	zone    *Name
-	servers []IPv4
+	servers []NameServer
+}
+
+type NameServer struct {
+	name *Name
+	ips  []IPv4
+}
+
+func serverShuffle(servers []NameServer) []NameServer {
+	n := len(servers)
+	ret := make([]NameServer, n)
+	order := rand.Perm(n)
+	for i, ind := range order {
+		ret[i] = servers[ind]
+	}
+
+	return ret
+}
+
+func (zs *ZoneServers) sortServers() {
+	res := []NameServer{}
+	nameOnly := []NameServer{}
+
+	for _, ns := range zs.servers {
+		if len(ns.ips) == 0 {
+			nameOnly = append(nameOnly, ns)
+		} else {
+			res = append(res, ns)
+		}
+	}
+
+	res = serverShuffle(res)
+	nameOnly = serverShuffle(nameOnly)
+	for _, ns := range nameOnly {
+		res = append(res, ns)
+	}
+	zs.servers = res
 }
 
 type NSCache struct {
@@ -57,7 +94,7 @@ func (a *RecurAsker) StartFromRoot() {
 	a.start = nil
 }
 
-func (a *RecurAsker) StartWith(zone *Name, servers []IPv4) {
+func (a *RecurAsker) StartWith(zone *Name, servers []NameServer) {
 	a.start = &ZoneServers{zone, servers}
 }
 
@@ -81,8 +118,40 @@ func (a *RecurAsker) header() []string {
 	return []string{a.n.String(), TypeStr(a.t)}
 }
 
-func (a *RecurAsker) askZone() {
+func haveIP(ipList []IPv4, ip IPv4) bool {
+	for _, i := range ipList {
+		if i.Equal(&ip) {
+			return true
+		}
+	}
+	return false
+}
 
+func (a *RecurAsker) askZone(agent *agent) {
+	zone := a.current
+	zone.sortServers()
+	tried := []IPv4{}
+
+	for _, server := range zone.servers {
+		if len(server.ips) == 0 {
+			// TODO: ask IP first
+		}
+
+		if len(server.ips) == 0 {
+			continue
+		}
+
+		for _, ip := range server.ips {
+			if haveIP(tried, ip) {
+				continue
+			}
+			tried = append(tried, ip)
+			resp := agent.netQuery(a.n, a.t, ip)
+			if resp != nil { // not timeout
+				// TODO: handle response
+			}
+		}
+	}
 }
 
 func (a *RecurAsker) shoot(agent *agent) error {
