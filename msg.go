@@ -41,24 +41,24 @@ func NewQuesMsg(n *Name, t uint16) (ret *Msg) {
 	return ret
 }
 
-func (m *Msg) FilterRR(f func (*RR, string) bool) []*RR {
-    ret := []*RR{}
-    for _, rr := range m.Answ {
-        if f(&rr, ANSW) {
-            ret = append(ret, &rr)
-        }
-    }
-    for _, rr := range m.Auth {
-        if f(&rr, AUTH) {
-            ret = append(ret, &rr)
-        }
-    }
-    for _, rr := range m.Addi {
-        if f(&rr, ADDI) {
-            ret = append(ret, &rr)
-        }
-    }
-    return ret
+func (m *Msg) FilterRR(f func(*RR, string) bool) []*RR {
+	ret := []*RR{}
+	for _, rr := range m.Answ {
+		if f(&rr, ANSW) {
+			ret = append(ret, &rr)
+		}
+	}
+	for _, rr := range m.Auth {
+		if f(&rr, AUTH) {
+			ret = append(ret, &rr)
+		}
+	}
+	for _, rr := range m.Addi {
+		if f(&rr, ADDI) {
+			ret = append(ret, &rr)
+		}
+	}
+	return ret
 }
 
 func TypeStr(t uint16) string {

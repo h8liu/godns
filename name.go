@@ -20,15 +20,21 @@ func (e *NameError) Error() string {
 }
 
 func (n *Name) Equal(other *Name) bool {
-    if other == nil { return false }
-    if n == nil { return false }
-    if len(n.labels) != len(other.labels) { return false }
-    for i, label := range n.labels {
-        if label != other.labels[i] {
-            return false
-        }
-    }
-    return true
+	if other == nil {
+		return false
+	}
+	if n == nil {
+		return false
+	}
+	if len(n.labels) != len(other.labels) {
+		return false
+	}
+	for i, label := range n.labels {
+		if label != other.labels[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func (n *Name) String() string {
