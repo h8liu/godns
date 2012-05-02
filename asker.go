@@ -148,10 +148,21 @@ func (a *RecurAsker) askZone(agent *agent) {
 			tried = append(tried, ip)
 			resp := agent.netQuery(a.n, a.t, ip)
 			if resp != nil { // not timeout
+                msg := resp.Msg
+                rcode := msg.Flags & F_RCODEMASK
+                if rcode == RCODE_OKAY || rcode == RCODE_NAMEERROR {
+                    a.processAnswer(msg)
+                }
 				// TODO: handle response
 			}
 		}
 	}
+}
+
+func (a *RecurAsker) processAnswer(msg *Msg) {
+    // zone := a.current.zone
+    
+    // TODO: scan records
 }
 
 func (a *RecurAsker) shoot(agent *agent) error {

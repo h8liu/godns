@@ -56,3 +56,10 @@ const (
 	CH = 3
 	HS = 4
 )
+
+const (
+    QUES = "ques"
+    ANSW = "ausw"
+    AUTH = "auth"
+    ADDI = "addi"
+)
