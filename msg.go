@@ -43,21 +43,27 @@ func NewQuesMsg(n *Name, t uint16) (ret *Msg) {
 
 func (m *Msg) FilterRR(f func(*RR, string) bool) []*RR {
 	ret := []*RR{}
-	for _, rr := range m.Answ {
-		if f(&rr, ANSW) {
-			ret = append(ret, &rr)
+	for i := 0; i < len(m.Answ); i++ {
+		rr := &m.Answ[i]
+		if f(rr, ANSW) {
+			ret = append(ret, rr)
 		}
 	}
-	for _, rr := range m.Auth {
-		if f(&rr, AUTH) {
-			ret = append(ret, &rr)
+
+	for i := 0; i < len(m.Auth); i++ {
+		rr := &m.Auth[i]
+		if f(rr, AUTH) {
+			ret = append(ret, rr)
 		}
 	}
-	for _, rr := range m.Addi {
-		if f(&rr, ADDI) {
-			ret = append(ret, &rr)
+
+	for i := 0; i < len(m.Addi); i++ {
+		rr := &m.Addi[i]
+		if f(rr, ADDI) {
+			ret = append(ret, rr)
 		}
 	}
+
 	return ret
 }
 
