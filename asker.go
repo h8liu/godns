@@ -202,9 +202,8 @@ func (a *RecurAsker) findAns(msg *Msg, log *pson.Printer) (bool, *ZoneServers) {
 		if rr.Type != NS {
 			return false
 		}
-		zone := a.current.zone
 		name := rr.Name
-		if !name.SubOf(zone) {
+		if !name.SubOf(a.current.zone) {
 			return false
 		}
 		if !name.Equal(a.n) && !name.ParentOf(a.n) {
@@ -220,6 +219,7 @@ func (a *RecurAsker) findAns(msg *Msg, log *pson.Printer) (bool, *ZoneServers) {
 	subzone := rrs[0].Name // we only select the first subzone
 	redirect := &ZoneServers{subzone, []*NameServer{}}
 
+rrloop:
 	for _, rr := range rrs {
 		if rr.Name.Equal(subzone) {
 			log.Print("weird", "multiple subzones")
@@ -234,23 +234,15 @@ func (a *RecurAsker) findAns(msg *Msg, log *pson.Printer) (bool, *ZoneServers) {
 		}
 
 		nsName := nsData.name
-		already := false
 		for _, s := range redirect.servers {
 			if nsName.Equal(s.name) {
-				already = true
-				break
+				continue rrloop
 			}
-		}
-		if already {
-			continue
 		}
 
 		ns := &NameServer{nsName, []*IPv4{}}
 		msg.FilterINRR(func(rr *RR, seg string) bool {
-			if rr.Type != A {
-				return false
-			}
-			if !rr.Name.Equal(nsName) {
+			if rr.Type != A || !rr.Name.Equal(nsName) {
 				return false
 			}
 			ipData, b := rr.Rdata.(*RdIP)
@@ -289,11 +281,11 @@ func (a *RecurAsker) shoot(agent *agent) error {
 	return nil
 }
 
-// recursively query related records for a domain
-type RecordAsker struct {
-}
-
 // recursively query an IP address for a domain
 // will also chase down cnames
 type IPAsker struct {
+}
+
+// recursively query related records for a domain
+type RecordAsker struct {
 }
