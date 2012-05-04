@@ -277,15 +277,16 @@ func (a *RecurAsker) shoot(agent *agent) error {
 	for a.current != nil {
 		a.answer = a.askZone(agent)
 	}
-
 	return nil
 }
 
 // recursively query an IP address for a domain
 // will also chase down cnames
+// TODO
 type IPAsker struct {
 }
 
 // recursively query related records for a domain
+// TODO
 type RecordAsker struct {
 }
