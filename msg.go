@@ -67,6 +67,15 @@ func (m *Msg) FilterRR(f func(*RR, string) bool) []*RR {
 	return ret
 }
 
+func (m *Msg) FilterINRR(f func(*RR, string) bool) []*RR {
+	return m.FilterRR(func(rr *RR, seg string) bool {
+		if rr.Class != IN {
+			return false
+		}
+		return f(rr, seg)
+	})
+}
+
 func TypeStr(t uint16) string {
 	switch t {
 	case A:

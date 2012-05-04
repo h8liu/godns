@@ -305,11 +305,11 @@ func (a *agent) query(asker Asker) {
 	a.log.EndIndent()
 }
 
-func (a *agent) netQuery(n *Name, t uint16, host IPv4) *Response {
+func (a *agent) netQuery(n *Name, t uint16, host *IPv4) *Response {
 	a.log.Print("q", n.String(), TypeStr(t), fmt.Sprintf("@%s", host))
 	for i := 0; i < 3; i++ {
 		a.flush() // flush before query
-		r, e := a.conn.QueryHost(&host, n, t)
+		r, e := a.conn.QueryHost(host, n, t)
 		if e == nil {
 			a.log.Print("recv", r.Time.String())
 			r.Msg.Pson(a.log)

@@ -116,3 +116,23 @@ func NewName(s string) (ret *Name, e error) {
 	ret = &Name{labels}
 	return ret, nil
 }
+
+func (n *Name) SubOf(other *Name) bool {
+	if len(other.labels) == 0 {
+		return true
+	}
+	if len(n.labels) <= len(other.labels) {
+		return false
+	}
+	subs := n.labels[len(n.labels)-len(other.labels):]
+	for i, lab := range subs {
+		if lab != other.labels[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func (n *Name) ParentOf(other *Name) bool {
+	return other.SubOf(n)
+}
