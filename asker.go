@@ -1,7 +1,7 @@
 package dns
 
 import (
-	"dns/pson"
+	"./pson"
 	"errors"
 	"math/rand"
 )
@@ -14,7 +14,7 @@ type Asker interface {
 
 // recursively query a question through a bunch of servers
 // only focus on one single record type
-type RecurAsker struct {
+type Recursive struct {
 	n       *Name
 	t       uint16
 	nscache *NSCache
@@ -65,23 +65,8 @@ func (zs *ZoneServers) sortServers() {
 	zs.servers = res
 }
 
-type NSCache struct {
-}
-
-var globalNSCache *NSCache = NewNSCache()
-
-func NewNSCache() *NSCache {
-	// TODO
-	return new(NSCache)
-}
-
-func (c *NSCache) BestFor(name *Name) *ZoneServers {
-	// TODO
-	return nil
-}
-
-func NewRecurAsker(name *Name, t uint16) *RecurAsker {
-	ret := new(RecurAsker)
+func NewRecursive(name *Name, t uint16) *Recursive {
+	ret := new(Recursive)
 	ret.n = name
 	ret.t = t
 	ret.nscache = nil
@@ -93,31 +78,31 @@ func NewRecurAsker(name *Name, t uint16) *RecurAsker {
 	return ret
 }
 
-func (a *RecurAsker) StartFromRoot() {
+func (a *Recursive) StartFromRoot() {
 	a.start = nil
 }
 
-func (a *RecurAsker) StartWith(zone *Name, servers []*NameServer) {
+func (a *Recursive) StartWith(zone *Name, servers []*NameServer) {
 	a.start = &ZoneServers{zone, servers}
 }
 
-func (a *RecurAsker) UseCache(cache *NSCache) {
+func (a *Recursive) UseCache(cache *NSCache) {
 	a.nscache = cache
 }
 
-func (a *RecurAsker) UseGlobalCache() {
+func (a *Recursive) UseGlobalCache() {
 	a.nscache = globalNSCache
 }
 
-func (a *RecurAsker) UseNoCache() {
+func (a *Recursive) UseNoCache() {
 	a.nscache = nil
 }
 
-func (a *RecurAsker) name() string {
+func (a *Recursive) name() string {
 	return "rec"
 }
 
-func (a *RecurAsker) header() []string {
+func (a *Recursive) header() []string {
 	return []string{a.n.String(), TypeStr(a.t)}
 }
 
@@ -130,14 +115,14 @@ func haveIP(ipList []*IPv4, ip *IPv4) bool {
 	return false
 }
 
-func (a *RecurAsker) nextZone(zs *ZoneServers) {
+func (a *Recursive) nextZone(zs *ZoneServers) {
 	if zs != nil {
 		a.last = zs
 	}
 	a.current = zs
 }
 
-func (a *RecurAsker) askZone(agent *agent) *Msg {
+func (a *Recursive) askZone(agent *agent) *Msg {
 	zone := a.current
 	zone.sortServers()
 	tried := []*IPv4{}
@@ -185,7 +170,7 @@ func (a *RecurAsker) askZone(agent *agent) *Msg {
 	return nil
 }
 
-func (a *RecurAsker) findAns(msg *Msg, log *pson.Printer) (bool, *ZoneServers) {
+func (a *Recursive) findAns(msg *Msg, log *pson.Printer) (bool, *ZoneServers) {
 	// look for answer
 	rrs := msg.FilterINRR(func(rr *RR, seg string) bool {
 		if !rr.Name.Equal(a.n) {
@@ -228,8 +213,8 @@ rrloop:
 		if rr.Class != IN || rr.Type != NS {
 			panic("redirect record is wrong type")
 		}
-		nsData, b := rr.Rdata.(*RdName)
-		if !b {
+		nsData, ok := rr.Rdata.(*RdName)
+		if !ok {
 			panic("redirect record is not RdName")
 		}
 
@@ -245,8 +230,8 @@ rrloop:
 			if rr.Type != A || !rr.Name.Equal(nsName) {
 				return false
 			}
-			ipData, b := rr.Rdata.(*RdIP)
-			if !b || ipData.ip == nil {
+			ipData, ok := rr.Rdata.(*RdIP)
+			if !ok || ipData.ip == nil {
 				return false
 			}
 			ns.ips = append(ns.ips, ipData.ip)
@@ -263,7 +248,7 @@ rrloop:
 	return false, redirect
 }
 
-func (a *RecurAsker) shoot(agent *agent) error {
+func (a *Recursive) shoot(agent *agent) error {
 	if a.start != nil {
 		a.nextZone(a.start)
 	} else {
