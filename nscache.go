@@ -23,6 +23,7 @@ func (c *NSCache) AddZone(zs *ZoneServers) {
 func (c *NSCache) AddServer(zone *Name, servers ...*NameServer) {
 	ind := zone.String()
 	entry, ok := c.cache[ind]
+
 	if !ok {
 		entry = &ZoneServers{zone, []*NameServer{}}
 		c.cache[ind] = entry
