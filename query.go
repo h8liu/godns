@@ -19,6 +19,7 @@ type Conn struct {
 	closeSignal chan int
 	recvClosed  chan int
 	serveClosed chan int
+    started bool
 }
 
 type queryJob struct {
@@ -218,7 +219,7 @@ func (c *Conn) LogToStderr() {
 	})
 }
 
-func (c *Conn) Start() error {
+func (c *Conn) start() error {
 	c.sendQueue = make(chan *queryJob, 100)
 	c.recvQueue = make(chan *recvBuf, 100)
 	c.closeSignal = make(chan int, 1)
@@ -254,12 +255,26 @@ func NewConn() (c *Conn, e error) {
 	ret := new(Conn)
 	ret.conn = nil
 	ret.jobs = map[uint16]*queryJob{}
+    ret.started = false
 
 	return ret, nil
 }
 
+func (c *Conn) sureStarted() error {
+    if !c.started {
+        return c.start()
+    }
+    return nil
+}
+
 func (c *Conn) QueryHost(h *IPv4, n *Name, t uint16) (
 	resp *Response, err error) {
+    
+    err = c.sureStarted()
+    if err != nil { 
+        return nil, nil
+    }
+
 	job := new(queryJob)
 	job.name = n
 	job.t = t
@@ -285,11 +300,18 @@ type agent struct {
 	out  io.Writer
 }
 
-func (c *Conn) Answer(a Asker, out io.Writer) {
+func (c *Conn) Answer(a Asker, out io.Writer) error {
+    err := c.sureStarted()
+    if err != nil { 
+        return err
+    }
+
 	agent := &agent{pson.NewPrinter(), c, out}
 	agent.query(a)
 	agent.log.End()
 	agent.flush()
+
+    return nil
 }
 
 func (a *agent) flush() {

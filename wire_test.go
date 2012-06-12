@@ -50,8 +50,8 @@ func TestQuerier(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewConn: %s", err)
 	}
+
 	conn.LogToStderr()
-	conn.Start()
 
 	resp, err := conn.QueryHost(ParseIP("198.41.0.4"), name, A)
 	// resp, err := conn.QueryHost(ParseIP("192.168.0.1"), name, A)
