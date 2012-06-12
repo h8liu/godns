@@ -87,7 +87,7 @@ func (a *Recursive) StartWith(zone *Name, servers []*NameServer) {
 }
 
 func (a *Recursive) UseNoCache() {
-    a.UseCache(nil)
+	a.UseCache(nil)
 }
 
 func (a *Recursive) UseCache(cache *NSCache) {
@@ -95,9 +95,8 @@ func (a *Recursive) UseCache(cache *NSCache) {
 }
 
 func (a *Recursive) UseGlobalCache() {
-    a.UseCache(globalNSCache)
+	a.UseCache(globalNSCache)
 }
-
 
 func (a *Recursive) name() string {
 	return "rec"
@@ -246,7 +245,7 @@ rrloop:
 		panic("where are my redirect servers")
 	}
 
-    a.nscache.AddZone(redirect)
+	a.nscache.AddZone(redirect)
 
 	return false, redirect
 }
