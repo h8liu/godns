@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// maintains a dns connection for dns queries
 type Conn struct {
 	conn        net.PacketConn
 	jobs        map[uint16]*queryJob
@@ -22,6 +23,7 @@ type Conn struct {
 	started     bool
 }
 
+// an internal async query job
 type queryJob struct {
 	name     *Name
 	t        uint16
@@ -31,11 +33,13 @@ type queryJob struct {
 	resp     *Response
 }
 
+// a received packet
 type recvBuf struct {
 	buf  []byte
 	addr net.Addr
 }
 
+// a parsed response
 type Response struct {
 	Msg  *Msg
 	Host *IPv4
@@ -44,17 +48,17 @@ type Response struct {
 }
 
 // encapsulate background thread error
-type BgError struct {
+type ConnError struct {
 	s string
 	e error
 }
 
-func (e *BgError) Error() string {
+func (e *ConnError) Error() string {
 	return fmt.Sprintf("%s: %s", e.s, e.e)
 }
 
 func (c *Conn) logError(s string, e error) {
-	c.errlog <- &BgError{s, e}
+	c.errlog <- &ConnError{s, e}
 }
 
 // time out error
@@ -200,7 +204,13 @@ func (c *Conn) serveRecv() {
 	c.recvClosed <- 1
 }
 
-func (c *Conn) LogWith(f func(error)) {
+type Logger func(error)
+
+func LogToStdErr(e error) {
+	fmt.Fprintf(os.Stderr, "%s\n", e)
+}
+
+func (c *Conn) LogWith(log Logger) {
 	if c.errlog != nil {
 		close(c.errlog)
 	}
@@ -208,15 +218,9 @@ func (c *Conn) LogWith(f func(error)) {
 	c.errlog = make(chan error)
 	go func() {
 		for e := range c.errlog {
-			f(e)
+			log(e)
 		}
 	}()
-}
-
-func (c *Conn) LogToStderr() {
-	c.LogWith(func(e error) {
-		fmt.Fprintf(os.Stderr, "conn: %s\n", e)
-	})
 }
 
 func (c *Conn) start() error {
@@ -237,7 +241,7 @@ func (c *Conn) start() error {
 }
 
 // close gracefully
-func (c *Conn) Stop() {
+func (c *Conn) Close() {
 	if c.closeSignal == nil {
 		return
 	}
@@ -251,6 +255,7 @@ func (c *Conn) Stop() {
 	c.closeSignal = nil
 }
 
+// creates a connection
 func NewConn() (c *Conn, e error) {
 	ret := new(Conn)
 	ret.conn = nil
@@ -293,20 +298,20 @@ func (c *Conn) QueryHost(h *IPv4, n *Name, t uint16) (
 	return job.resp, nil
 }
 
-// to handle complex askers
+// to handle iterative askers
 type agent struct {
-	log  *pson.Printer
-	conn *Conn
-	out  io.Writer
+	log       *pson.Printer
+	conn      *Conn
+	logWriter io.Writer
 }
 
-func (c *Conn) Answer(a Asker, out io.Writer) error {
+func (c *Conn) Answer(a Asker, logWriter io.Writer) error {
 	err := c.sureStarted()
 	if err != nil {
 		return err
 	}
 
-	agent := &agent{pson.NewPrinter(), c, out}
+	agent := &agent{pson.NewPrinter(), c, logWriter}
 	agent.query(a)
 	agent.log.End()
 	agent.flush()
@@ -315,8 +320,8 @@ func (c *Conn) Answer(a Asker, out io.Writer) error {
 }
 
 func (a *agent) flush() {
-	if a.out != nil {
-		a.log.Flush(a.out)
+	if a.logWriter != nil {
+		a.log.Flush(a.logWriter)
 	}
 }
 
