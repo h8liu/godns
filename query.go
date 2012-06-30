@@ -205,7 +205,7 @@ func (c *Conn) recv() {
 
 type Logger func(error)
 
-func LogToStdErr(e error) {
+func LogToStderr(e error) {
 	fmt.Fprintf(os.Stderr, "%s\n", e)
 }
 
@@ -260,7 +260,7 @@ func NewConn() (c *Conn, e error) {
 	ret.conn = nil
 	ret.jobs = map[uint16]*queryJob{}
 	ret.started = false
-	ret.LogWith(LogToStdErr)
+	ret.LogWith(LogToStderr)
 
 	return ret, nil
 }
