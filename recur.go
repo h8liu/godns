@@ -1,20 +1,13 @@
 package dns
 
 import (
-	"./pson"
-	"errors"
+	"fmt"
 	"math/rand"
 )
 
-type Asker interface {
-	shoot(a *agent) error
-	name() string
-	header() []string
-}
-
 // recursively query a question through a bunch of servers
 // only focus on one single record type
-type Recursive struct {
+type RecurProb struct {
 	n       *Name
 	t       uint16
 	nscache *NSCache
@@ -34,7 +27,7 @@ type NameServer struct {
 	ips  []*IPv4
 }
 
-func serverShuffle(servers []*NameServer) []*NameServer {
+func shuffleServers(servers []*NameServer) []*NameServer {
 	n := len(servers)
 	ret := make([]*NameServer, n)
 	order := rand.Perm(n)
@@ -45,7 +38,7 @@ func serverShuffle(servers []*NameServer) []*NameServer {
 	return ret
 }
 
-func (zs *ZoneServers) sortServers() {
+func (zs *ZoneServers) shuffle() {
 	res := []*NameServer{}
 	nameOnly := []*NameServer{}
 
@@ -57,53 +50,41 @@ func (zs *ZoneServers) sortServers() {
 		}
 	}
 
-	res = serverShuffle(res)
-	nameOnly = serverShuffle(nameOnly)
+	res = shuffleServers(res)
+	nameOnly = shuffleServers(nameOnly)
 	for _, ns := range nameOnly {
 		res = append(res, ns)
 	}
 	zs.servers = res
 }
 
-func NewRecursive(name *Name, t uint16) *Recursive {
-	ret := new(Recursive)
+func NewRecurProb(name *Name, t uint16) *RecurProb {
+	ret := new(RecurProb)
 	ret.n = name
 	ret.t = t
 	ret.nscache = nil
 	ret.answer = nil
 
-	ret.UseGlobalCache()
+	ret.UseCache(globalNSCache)
 	ret.StartFromRoot()
 
 	return ret
 }
 
-func (a *Recursive) StartFromRoot() {
-	a.start = nil
+func (p *RecurProb) StartFromRoot() {
+	p.start = nil
 }
 
-func (a *Recursive) StartWith(zone *Name, servers []*NameServer) {
-	a.start = &ZoneServers{zone, servers}
+func (p *RecurProb) StartFrom(zone *Name, servers []*NameServer) {
+	p.start = &ZoneServers{zone, servers}
 }
 
-func (a *Recursive) UseNoCache() {
-	a.UseCache(nil)
+func (p *RecurProb) UseCache(cache *NSCache) {
+	p.nscache = cache
 }
 
-func (a *Recursive) UseCache(cache *NSCache) {
-	a.nscache = cache
-}
-
-func (a *Recursive) UseGlobalCache() {
-	a.UseCache(globalNSCache)
-}
-
-func (a *Recursive) name() string {
-	return "rec"
-}
-
-func (a *Recursive) header() []string {
-	return []string{a.n.String(), TypeStr(a.t)}
+func (p *RecurProb) Title() (name string, meta []string) {
+	return "rec", []string{p.n.String(), TypeStr(p.t)}
 }
 
 func haveIP(ipList []*IPv4, ip *IPv4) bool {
@@ -115,16 +96,16 @@ func haveIP(ipList []*IPv4, ip *IPv4) bool {
 	return false
 }
 
-func (a *Recursive) nextZone(zs *ZoneServers) {
+func (p *RecurProb) nextZone(zs *ZoneServers) {
 	if zs != nil {
-		a.last = zs
+		p.last = zs
 	}
-	a.current = zs
+	p.current = zs
 }
 
-func (a *Recursive) askZone(agent *agent) *Msg {
-	zone := a.current
-	zone.sortServers()
+func (p *RecurProb) queryZone(a *Agent) *Msg {
+	zone := p.current
+	zone.shuffle()
 	tried := []*IPv4{}
 
 	for _, server := range zone.servers {
@@ -134,49 +115,54 @@ func (a *Recursive) askZone(agent *agent) *Msg {
 		if len(server.ips) == 0 {
 			continue
 		}
-		agent.log.Print("use", server.name.String())
 		for _, ip := range server.ips {
 			if haveIP(tried, ip) {
 				continue
 			}
 			tried = append(tried, ip)
-			resp := agent.netQuery(a.n, a.t, ip)
+			a.p.Print("//as",
+				zone.zone.String(),
+				fmt.Sprintf("@%s(%s)", server.name.String(), ip.String()))
+			resp := a.Query(ip, p.n, p.t)
 			if resp == nil {
+				a.p.Print("//unreachable", server.name.String())
 				continue
 			}
 
 			msg := resp.Msg
 			rcode := msg.Flags & F_RCODEMASK
-			// we only trust okay and name errors
-			// for other error codes, we will simply treat them
-			// as time outs
 			if !(rcode == RCODE_OKAY || rcode == RCODE_NAMEERROR) {
+				a.p.Print("//svrerror", server.name.String())
 				continue
 			}
 
-			found, redirect := a.findAns(msg, agent.log)
+			found, redirect := p.findAns(msg, a)
 			if found {
-				a.nextZone(nil)
+				a.p.Print("//found")
+				p.nextZone(nil)
 				return msg
 			} else {
-				a.nextZone(redirect)
+				if redirect == nil {
+					a.p.Print("//non-exist")
+				}
+				p.nextZone(redirect)
 				return nil
 			}
 		}
 	}
 
 	// got nothing, so set next zone to nil
-	a.nextZone(nil)
+	p.nextZone(nil)
 	return nil
 }
 
-func (a *Recursive) findAns(msg *Msg, log *pson.Printer) (bool, *ZoneServers) {
+func (p *RecurProb) findAns(msg *Msg, a *Agent) (bool, *ZoneServers) {
 	// look for answer
 	rrs := msg.FilterINRR(func(rr *RR, seg int) bool {
-		if !rr.Name.Equal(a.n) {
+		if !rr.Name.Equal(p.n) {
 			return false
 		}
-		return a.t == rr.Type || (a.t == A && rr.Type == CNAME)
+		return p.t == rr.Type || (p.t == A && rr.Type == CNAME)
 	})
 	if len(rrs) > 0 {
 		return true, nil
@@ -188,10 +174,10 @@ func (a *Recursive) findAns(msg *Msg, log *pson.Printer) (bool, *ZoneServers) {
 			return false
 		}
 		name := rr.Name
-		if !name.SubOf(a.current.zone) {
+		if !name.SubOf(p.current.zone) {
 			return false
 		}
-		if !name.Equal(a.n) && !name.ParentOf(a.n) {
+		if !name.Equal(p.n) && !name.ParentOf(p.n) {
 			return false
 		}
 		return true
@@ -206,8 +192,8 @@ func (a *Recursive) findAns(msg *Msg, log *pson.Printer) (bool, *ZoneServers) {
 
 rrloop:
 	for _, rr := range rrs {
-		if rr.Name.Equal(subzone) {
-			log.Print("weird", "multiple subzones")
+		if !rr.Name.Equal(subzone) {
+			a.p.Print("warning", "multiple subzones")
 			continue
 		}
 		if rr.Class != IN || rr.Type != NS {
@@ -245,35 +231,28 @@ rrloop:
 		panic("where are my redirect servers")
 	}
 
-	a.nscache.AddZone(redirect)
+	p.nscache.AddZone(redirect)
 
 	return false, redirect
 }
 
-func (a *Recursive) shoot(agent *agent) error {
-	if a.start != nil {
-		a.nextZone(a.start)
+func (p *RecurProb) ExpandVia(a *Agent) {
+	if p.start != nil {
+		p.nextZone(p.start)
 	} else {
-		best := a.nscache.BestFor(a.n)
+		best := p.nscache.BestFor(p.n)
 		if best == nil {
-			return errors.New("no start zone")
+			// TODO: record no start zone error
+			return
 		}
-		a.nextZone(best)
+		p.nextZone(best)
 	}
 
-	for a.current != nil {
-		a.answer = a.askZone(agent)
+	for p.current != nil {
+		p.answer = p.queryZone(a)
 	}
-	return nil
 }
 
-// recursively query an IP address for a domain
-// will also chase down cnames
-// TODO
-type IPAsker struct {
-}
-
-// recursively query related records for a domain
-// TODO
-type RecordAsker struct {
+func (p *RecurProb) IndentSub() bool {
+	return true
 }

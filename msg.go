@@ -197,10 +197,8 @@ func psonSection(p *pson.Printer, rrs []RR, sec string) {
 }
 
 func (m *Msg) PsonTo(p *pson.Printer) {
-	if (m.Flags & F_RESPONSE) == F_RESPONSE {
-		p.PrintIndent("dns.resp")
-	} else {
-		p.PrintIndent("dns.query")
+	if (m.Flags & F_RESPONSE) != F_RESPONSE {
+		p.Print("//query")
 	}
 
 	p.Print("id", fmt.Sprintf("%d", m.ID))
@@ -253,8 +251,6 @@ func (m *Msg) PsonTo(p *pson.Printer) {
 	psonSection(p, m.Answ, "answ")
 	psonSection(p, m.Auth, "auth")
 	psonSection(p, m.Addi, "addi")
-
-	p.EndIndent()
 }
 
 func (m *Msg) String() string {

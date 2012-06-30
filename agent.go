@@ -22,7 +22,7 @@ func NewAgent(conn *Conn, log io.Writer) *Agent {
 		log: log, signal: make(chan error, 1)}
 }
 
-func (a *Agent) flushLog() {
+func (a *Agent) FlushLog() {
 	if a.log != nil {
 		a.p.FlushTo(a.log)
 	}
@@ -32,7 +32,7 @@ func (a *Agent) Query(h *IPv4, n *Name, t uint16) (resp *Response) {
 	a.p.Print("q", n.String(), TypeStr(t),
 		fmt.Sprintf("@%s", h))
 	for i := 0; i < AGENT_RETRY; i++ {
-		a.flushLog()
+		a.FlushLog()
 		a.conn.SendQuery(h, n, t,
 			func(r *Response, e error) {
 				resp = r
@@ -40,8 +40,9 @@ func (a *Agent) Query(h *IPv4, n *Name, t uint16) (resp *Response) {
 			})
 		err := <-a.signal
 		if err == nil {
-			a.p.Print("recv", resp.Time.String())
+			a.p.PrintIndent("recv", resp.Time.String())
 			resp.Msg.PsonTo(a.p)
+			a.p.EndIndent()
 			return
 		}
 		a.p.Print("err", err.Error())

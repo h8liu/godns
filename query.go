@@ -1,10 +1,8 @@
 package dns
 
 import (
-	"./pson"
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"os"
 	"time"
@@ -189,10 +187,10 @@ func (c *Conn) recv() {
 			if nerr, b := err.(net.Error); b {
 				if !nerr.Timeout() &&
 					!nerr.Temporary() {
-					c.logError("readFrom", nerr)
+					c.logError("readFrom1", nerr)
 				}
 			} else {
-				c.logError("readFrom", err)
+				c.logError("readFrom2", err)
 			}
 		}
 
@@ -200,6 +198,7 @@ func (c *Conn) recv() {
 			break
 		}
 	}
+
 	c.recvClosed <- 1
 }
 
@@ -223,16 +222,19 @@ func (c *Conn) LogWith(log Logger) {
 }
 
 func (c *Conn) start() error {
-	c.sendQueue = make(chan *queryJob, 100)
-	c.recvQueue = make(chan *recvBuf, 100)
-	c.closeSignal = make(chan int, 1)
-	c.recvClosed = make(chan int, 1)
-	c.serveClosed = make(chan int, 1)
 	conn, err := net.ListenPacket("udp4", ":0")
 	if err != nil {
 		return err
 	}
 	c.conn = conn
+
+	c.sendQueue = make(chan *queryJob, 100)
+	c.recvQueue = make(chan *recvBuf, 100)
+	c.closeSignal = make(chan int, 1)
+	c.recvClosed = make(chan int, 1)
+	c.serveClosed = make(chan int, 1)
+	c.started = true
+
 	go c.recv()  // receiving
 	go c.serve() // sending, time out and parsing
 
@@ -242,6 +244,7 @@ func (c *Conn) start() error {
 // close gracefully
 func (c *Conn) Close() {
 	if c.closeSignal == nil {
+		// already closed
 		return
 	}
 
@@ -301,53 +304,4 @@ func (c *Conn) Query(h *IPv4, n *Name, t uint16) (
 		return nil, err
 	}
 	return resp, nil
-}
-
-// to handle iterative askers
-type agent struct {
-	log       *pson.Printer
-	conn      *Conn
-	logWriter io.Writer
-}
-
-func (c *Conn) Answer(a Asker, logWriter io.Writer) error {
-	err := c.ensureStarted()
-	if err != nil {
-		return err
-	}
-
-	agent := &agent{pson.NewPrinter(), c, logWriter}
-	agent.query(a)
-	agent.log.End()
-	agent.flush()
-
-	return nil
-}
-
-func (a *agent) flush() {
-	if a.logWriter != nil {
-		a.log.FlushTo(a.logWriter)
-	}
-}
-
-func (a *agent) query(asker Asker) {
-	a.log.PrintIndent(asker.name(), asker.header()...)
-	err := asker.shoot(a)
-	a.log.Print("error", err.Error())
-	a.log.EndIndent()
-}
-
-func (a *agent) netQuery(n *Name, t uint16, host *IPv4) *Response {
-	a.log.Print("q", n.String(), TypeStr(t), fmt.Sprintf("@%s", host))
-	for i := 0; i < 3; i++ {
-		a.flush() // flush before query, because query take time
-		r, e := a.conn.Query(host, n, t)
-		if e == nil {
-			a.log.Print("recv", r.Time.String())
-			r.Msg.PsonTo(a.log)
-			return r
-		}
-		a.log.Print("error", e.Error())
-	}
-	return nil
 }

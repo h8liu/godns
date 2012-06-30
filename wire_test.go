@@ -37,7 +37,7 @@ func TestQueryRoot(t *testing.T) {
 		t.Fatalf("parse: %s", err)
 	}
 	s := msg.String()
-	t.Logf("msg: \n %s\n", s)
+	t.Logf("msg: \n%s\n", s)
 }
 
 func TestQuerier(t *testing.T) {
@@ -51,12 +51,12 @@ func TestQuerier(t *testing.T) {
 		t.Fatalf("NewConn: %s", err)
 	}
 
-    resp, err := conn.Query(ParseIP("198.41.0.4"), name, A)
+	resp, err := conn.Query(ParseIP("198.41.0.4"), name, A)
 	// resp, err := conn.QueryHost(ParseIP("192.168.0.1"), name, A)
 	if err != nil {
 		t.Fatalf("query: %s", err)
 	}
 	conn.Close()
 
-	t.Logf("msg: %s", resp.Msg)
+	t.Logf("msg: \n%s", resp.Msg)
 }
