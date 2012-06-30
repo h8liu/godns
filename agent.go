@@ -6,12 +6,6 @@ import (
 	"io"
 )
 
-type Prob interface {
-	IndentSub() bool
-	ExpandVia(a *Agent)
-	Title() (name string, meta []string)
-}
-
 const (
 	AGENT_RETRY = 3
 )
