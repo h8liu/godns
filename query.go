@@ -175,7 +175,7 @@ func (c *Conn) serve() {
 	c.serveClosed <- 1
 }
 
-func (c *Conn) serveRecv() {
+func (c *Conn) recv() {
 	wait := time.Millisecond
 	buf := make([]byte, 512)
 	for {
@@ -233,8 +233,8 @@ func (c *Conn) start() error {
 		return err
 	}
 	c.conn = conn
-	go c.serveRecv() // receiving
-	go c.serve()     // sending, time out and parsing
+	go c.recv()  // receiving
+	go c.serve() // sending, time out and parsing
 
 	return nil
 }
