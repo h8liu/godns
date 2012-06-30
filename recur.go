@@ -110,7 +110,7 @@ func (p *RecurProb) queryZone(a *Agent) *Msg {
 
 	for _, server := range zone.servers {
 		if len(server.ips) == 0 {
-			// TODO: ask IP first
+			// TODO: ask IP first. will do this after AddrProb is done
 		}
 		if len(server.ips) == 0 {
 			continue
