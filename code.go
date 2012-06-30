@@ -58,8 +58,8 @@ const (
 )
 
 const (
-	QUES = "ques"
-	ANSW = "ausw"
-	AUTH = "auth"
-	ADDI = "addi"
+	QUES = 0
+	ANSW = 1
+	AUTH = 2
+	ADDI = 3
 )

@@ -29,8 +29,7 @@ type queryJob struct {
 	t        uint16
 	host     *IPv4
 	deadline time.Time
-	signal   chan error
-	resp     *Response
+	callback QueryCallback
 }
 
 // a received packet
@@ -86,8 +85,8 @@ func (c *Conn) handleRecv(msg *Msg, addr net.Addr) error {
 			return errors.New("recv from other hosts")
 		}
 
-		job.resp = &Response{msg, ip, port, time.Now()}
-		job.signal <- nil
+		resp := &Response{msg, ip, port, time.Now()}
+		job.callback(resp, nil)
 
 		delete(c.jobs, msg.ID)
 	default:
@@ -123,7 +122,7 @@ func (c *Conn) serve() {
 			toRemove := []uint16{}
 			for id, job := range c.jobs {
 				if t.After(job.deadline) {
-					job.signal <- new(TimeoutError)
+					job.callback(nil, new(TimeoutError))
 					toRemove = append(toRemove, id)
 				}
 			}
@@ -142,10 +141,10 @@ func (c *Conn) serve() {
 			msg := NewQuesMsg(job.name, job.t)
 			_, b := c.jobs[msg.ID]
 			for b {
-				msg.RandID()
+				msg.RollID()
 				_, b = c.jobs[msg.ID]
 			}
-			buf, err := msg.ToWire()
+			buf, err := msg.Wire()
 			if err == nil {
 				ip := job.host.ToIP()
 				addr := &net.UDPAddr{ip, 53}
@@ -153,7 +152,7 @@ func (c *Conn) serve() {
 			}
 
 			if err != nil {
-				job.signal <- err // send error
+				job.callback(nil, err)
 			} else {
 				// send succeed, waiting now
 				job.deadline = time.Now().Add(time.Second * 5)
@@ -261,41 +260,47 @@ func NewConn() (c *Conn, e error) {
 	ret.conn = nil
 	ret.jobs = map[uint16]*queryJob{}
 	ret.started = false
+	ret.LogWith(LogToStdErr)
 
 	return ret, nil
 }
 
-func (c *Conn) sureStarted() error {
+func (c *Conn) ensureStarted() error {
 	if !c.started {
 		return c.start()
 	}
 	return nil
 }
 
-func (c *Conn) QueryHost(h *IPv4, n *Name, t uint16) (
-	resp *Response, err error) {
+type QueryCallback func(*Response, error)
 
-	err = c.sureStarted()
+func (c *Conn) SendQuery(h *IPv4, n *Name, t uint16,
+	callback QueryCallback) {
+	err := c.ensureStarted()
 	if err != nil {
-		return nil, nil
+		callback(nil, err)
+		return
 	}
 
-	job := new(queryJob)
-	job.name = n
-	job.t = t
-	job.host = h
-	job.signal = make(chan error, 1)
-	job.deadline = time.Now()
-	job.resp = nil
+	job := &queryJob{name: n, t: t, host: h, callback: callback}
 
 	c.sendQueue <- job
-	err = <-job.signal // waiting for response
+}
+
+func (c *Conn) Query(h *IPv4, n *Name, t uint16) (
+	resp *Response, err error) {
+
+	signal := make(chan error, 1)
+	c.SendQuery(h, n, t, func(r *Response, e error) {
+		resp = r
+		signal <- e
+	})
+
+	err = <-signal
 	if err != nil {
 		return nil, err
 	}
-
-	// resp should be set now
-	return job.resp, nil
+	return resp, nil
 }
 
 // to handle iterative askers
@@ -306,7 +311,7 @@ type agent struct {
 }
 
 func (c *Conn) Answer(a Asker, logWriter io.Writer) error {
-	err := c.sureStarted()
+	err := c.ensureStarted()
 	if err != nil {
 		return err
 	}
@@ -321,7 +326,7 @@ func (c *Conn) Answer(a Asker, logWriter io.Writer) error {
 
 func (a *agent) flush() {
 	if a.logWriter != nil {
-		a.log.Flush(a.logWriter)
+		a.log.FlushTo(a.logWriter)
 	}
 }
 
@@ -335,11 +340,11 @@ func (a *agent) query(asker Asker) {
 func (a *agent) netQuery(n *Name, t uint16, host *IPv4) *Response {
 	a.log.Print("q", n.String(), TypeStr(t), fmt.Sprintf("@%s", host))
 	for i := 0; i < 3; i++ {
-		a.flush() // flush before query
-		r, e := a.conn.QueryHost(host, n, t)
+		a.flush() // flush before query, because query take time
+		r, e := a.conn.Query(host, n, t)
 		if e == nil {
 			a.log.Print("recv", r.Time.String())
-			r.Msg.Pson(a.log)
+			r.Msg.PsonTo(a.log)
 			return r
 		}
 		a.log.Print("error", e.Error())

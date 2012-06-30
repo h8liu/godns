@@ -16,7 +16,7 @@ func NewPrinter() *Printer {
 	return new(Printer)
 }
 
-func (e *Printer) Flush(out io.Writer) (n int, err error) {
+func (e *Printer) FlushTo(out io.Writer) (n int, err error) {
 	n, err = out.Write(e.out.Bytes())
 	if err != nil {
 		return

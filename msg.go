@@ -36,12 +36,12 @@ func NewQuesMsg(n *Name, t uint16) (ret *Msg) {
 		make([]RR, 0),
 		make([]RR, 0)}
 	ret.Ques = append(ret.Ques, Ques{n, t, IN}) // copy in
-	ret.RandID()
+	ret.RollID()
 
 	return ret
 }
 
-func (m *Msg) FilterRR(f func(*RR, string) bool) []*RR {
+func (m *Msg) FilterRR(f func(*RR, int) bool) []*RR {
 	ret := []*RR{}
 	for i := 0; i < len(m.Answ); i++ {
 		rr := &m.Answ[i]
@@ -67,8 +67,8 @@ func (m *Msg) FilterRR(f func(*RR, string) bool) []*RR {
 	return ret
 }
 
-func (m *Msg) FilterINRR(f func(*RR, string) bool) []*RR {
-	return m.FilterRR(func(rr *RR, seg string) bool {
+func (m *Msg) FilterINRR(f func(*RR, int) bool) []*RR {
+	return m.FilterRR(func(rr *RR, seg int) bool {
 		if rr.Class != IN {
 			return false
 		}
@@ -154,7 +154,7 @@ func TTLStr(t uint32) string {
 	return ret
 }
 
-func (q *Ques) Pson(p *pson.Printer) {
+func (q *Ques) PsonTo(p *pson.Printer) {
 	slist := make([]string, 0)
 	if q.Type != A {
 		slist = append(slist, TypeStr(q.Type))
@@ -165,7 +165,7 @@ func (q *Ques) Pson(p *pson.Printer) {
 	p.Print(q.Name.String(), slist...)
 }
 
-func (rr *RR) Pson(p *pson.Printer) {
+func (rr *RR) PsonTo(p *pson.Printer) {
 	slist := make([]string, 0)
 
 	slist = append(slist, TypeStr(rr.Type))
@@ -191,12 +191,12 @@ func psonSection(p *pson.Printer, rrs []RR, sec string) {
 	}
 	p.PrintIndent(sec)
 	for _, rr := range rrs {
-		rr.Pson(p)
+		rr.PsonTo(p)
 	}
 	p.EndIndent()
 }
 
-func (m *Msg) Pson(p *pson.Printer) {
+func (m *Msg) PsonTo(p *pson.Printer) {
 	if (m.Flags & F_RESPONSE) == F_RESPONSE {
 		p.PrintIndent("dns.resp")
 	} else {
@@ -245,7 +245,7 @@ func (m *Msg) Pson(p *pson.Printer) {
 	if len(m.Ques) > 0 {
 		p.PrintIndent("ques")
 		for _, q := range m.Ques {
-			q.Pson(p)
+			q.PsonTo(p)
 		}
 		p.EndIndent()
 	}
@@ -259,17 +259,17 @@ func (m *Msg) Pson(p *pson.Printer) {
 
 func (m *Msg) String() string {
 	p := pson.NewPrinter()
-	m.Pson(p)
+	m.PsonTo(p)
 	p.End()
 
 	return p.Fetch()
 }
 
-func (m *Msg) RandID() {
+func (m *Msg) RollID() {
 	m.ID = uint16(rand.Uint32())
 }
 
-func (m *Msg) ToWire() ([]byte, error) {
+func (m *Msg) Wire() ([]byte, error) {
 	w := new(writer)
 	e := w.writeMsg(m)
 	if e != nil {

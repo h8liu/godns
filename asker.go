@@ -172,7 +172,7 @@ func (a *Recursive) askZone(agent *agent) *Msg {
 
 func (a *Recursive) findAns(msg *Msg, log *pson.Printer) (bool, *ZoneServers) {
 	// look for answer
-	rrs := msg.FilterINRR(func(rr *RR, seg string) bool {
+	rrs := msg.FilterINRR(func(rr *RR, seg int) bool {
 		if !rr.Name.Equal(a.n) {
 			return false
 		}
@@ -183,7 +183,7 @@ func (a *Recursive) findAns(msg *Msg, log *pson.Printer) (bool, *ZoneServers) {
 	}
 
 	// look for redirect name servers
-	rrs = msg.FilterINRR(func(rr *RR, seg string) bool {
+	rrs = msg.FilterINRR(func(rr *RR, seg int) bool {
 		if rr.Type != NS {
 			return false
 		}
@@ -226,7 +226,7 @@ rrloop:
 		}
 
 		ns := &NameServer{nsName, []*IPv4{}}
-		msg.FilterINRR(func(rr *RR, seg string) bool {
+		msg.FilterINRR(func(rr *RR, seg int) bool {
 			if rr.Type != A || !rr.Name.Equal(nsName) {
 				return false
 			}
