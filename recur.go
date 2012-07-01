@@ -62,17 +62,10 @@ func NewRecurProb(name *Name, t uint16) *RecurProb {
 	ret := new(RecurProb)
 	ret.n = name
 	ret.t = t
-	ret.nscache = nil
 	ret.answer = nil
-
-	ret.UseCache(globalNSCache)
-	ret.StartFromRoot()
+	ret.UseCache(DefNSCache)
 
 	return ret
-}
-
-func (p *RecurProb) StartFromRoot() {
-	p.start = nil
 }
 
 func (p *RecurProb) StartFrom(zone *Name, servers []*NameServer) {

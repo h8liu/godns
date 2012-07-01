@@ -4,11 +4,12 @@ type NSCache struct {
 	cache map[string]*ZoneServers
 }
 
-var globalNSCache *NSCache = NewNSCache()
+var DefNSCache *NSCache = NewNSCache()
 
 func NewNSCache() *NSCache {
-	// TODO
-	return new(NSCache)
+    ret := new(NSCache)
+    ret.cache = make(map[string]*ZoneServers)
+    return ret
 }
 
 func (c *NSCache) BestFor(name *Name) *ZoneServers {
