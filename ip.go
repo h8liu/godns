@@ -20,7 +20,7 @@ func IPFromIP(ip net.IP) *IPv4 {
 	return ret
 }
 
-func (ip *IPv4) ToIP() net.IP {
+func (ip *IPv4) IP() net.IP {
 	return net.IPv4(ip.ip[0], ip.ip[1], ip.ip[2], ip.ip[3])
 }
 

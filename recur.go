@@ -5,8 +5,7 @@ import (
 	"math/rand"
 )
 
-// recursively query a question through a bunch of servers
-// only focus on one single record type
+// recursively query through the DNS hierarchy
 type RecurProb struct {
 	n       *Name
 	t       uint16

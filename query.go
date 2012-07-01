@@ -144,7 +144,7 @@ func (c *Conn) serve() {
 			}
 			buf, err := msg.Wire()
 			if err == nil {
-				ip := job.host.ToIP()
+				ip := job.host.IP()
 				addr := &net.UDPAddr{ip, 53}
 				_, err = c.conn.WriteTo(buf, addr)
 			}
@@ -277,25 +277,23 @@ func (c *Conn) ensureStarted() error {
 
 type QueryCallback func(*Response, error)
 
-func (c *Conn) SendQuery(h *IPv4, n *Name, t uint16,
-	callback QueryCallback) {
+func (c *Conn) SendQuery(h *IPv4, n *Name, t uint16, cb QueryCallback) {
 	err := c.ensureStarted()
 	if err != nil {
-		callback(nil, err)
+		cb(nil, err)
 		return
 	}
 
-	job := &queryJob{name: n, t: t, host: h, callback: callback}
+	job := &queryJob{name: n, t: t, host: h, callback: cb}
 
 	c.sendQueue <- job
 }
 
-func (c *Conn) Query(h *IPv4, n *Name, t uint16) (
-	resp *Response, err error) {
+func (c *Conn) Query(h *IPv4, n *Name, t uint16) (re *Response, err error) {
 
 	signal := make(chan error, 1)
 	c.SendQuery(h, n, t, func(r *Response, e error) {
-		resp = r
+		re = r
 		signal <- e
 	})
 
@@ -303,5 +301,5 @@ func (c *Conn) Query(h *IPv4, n *Name, t uint16) (
 	if err != nil {
 		return nil, err
 	}
-	return resp, nil
+	return re, nil
 }
