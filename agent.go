@@ -15,11 +15,17 @@ type Agent struct {
 	p      *pson.Printer
 	log    io.Writer
 	signal chan error
+    Cache *NSCache
 }
 
 func NewAgent(conn *Conn, log io.Writer) *Agent {
-	return &Agent{conn: conn, p: pson.NewPrinter(),
-		log: log, signal: make(chan error, 1)}
+	return &Agent {
+        conn: conn, 
+        p: pson.NewPrinter(),
+        log: log, 
+        signal: make(chan error, 1), 
+        Cache: DefNSCache,
+    }
 }
 
 func (a *Agent) FlushLog() {

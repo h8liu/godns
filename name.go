@@ -136,3 +136,16 @@ func (n *Name) SubOf(other *Name) bool {
 func (n *Name) ParentOf(other *Name) bool {
 	return other.SubOf(n)
 }
+
+func (n *Name) IsRoot() bool {
+    return len(n.labels) == 0
+}
+
+func (n *Name) Parent() *Name {
+    if n.IsRoot() {
+        return nil
+    }
+    labels := make([]string, len(n.labels) - 1)
+    copy(labels, n.labels[1:])
+    return &Name{labels}
+}

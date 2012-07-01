@@ -9,14 +9,13 @@ import (
 type RecurProb struct {
 	n       *Name
 	t       uint16
-	nscache *NSCache
-	start   *ZoneServers
-	current *ZoneServers
-	last    *ZoneServers
+	start   *zoneServers
+	current *zoneServers
+	last    *zoneServers
 	answer  *Msg
 }
 
-type ZoneServers struct {
+type zoneServers struct {
 	zone    *Name
 	servers []*NameServer
 }
@@ -37,7 +36,21 @@ func shuffleServers(servers []*NameServer) []*NameServer {
 	return ret
 }
 
-func (zs *ZoneServers) shuffle() {
+func (ns *NameServer) clone() *NameServer {
+    ret := &NameServer{ns.name, make([]*IPv4, len(ns.ips))}
+    copy(ret.ips, ns.ips)
+    return ret
+}
+
+func (zs *zoneServers) clone() *zoneServers {
+    ret := &zoneServers{zs.zone, make([]*NameServer, len(zs.servers))}
+    for i, ns := range zs.servers {
+        ret.servers[i] = ns.clone()
+    }
+    return ret
+}
+
+func (zs *zoneServers) shuffle() {
 	res := []*NameServer{}
 	nameOnly := []*NameServer{}
 
@@ -62,17 +75,12 @@ func NewRecurProb(name *Name, t uint16) *RecurProb {
 	ret.n = name
 	ret.t = t
 	ret.answer = nil
-	ret.UseCache(DefNSCache)
 
 	return ret
 }
 
 func (p *RecurProb) StartFrom(zone *Name, servers []*NameServer) {
-	p.start = &ZoneServers{zone, servers}
-}
-
-func (p *RecurProb) UseCache(cache *NSCache) {
-	p.nscache = cache
+	p.start = &zoneServers{zone, servers}
 }
 
 func (p *RecurProb) Title() (name string, meta []string) {
@@ -88,7 +96,7 @@ func haveIP(ipList []*IPv4, ip *IPv4) bool {
 	return false
 }
 
-func (p *RecurProb) nextZone(zs *ZoneServers) {
+func (p *RecurProb) nextZone(zs *zoneServers) {
 	if zs != nil {
 		p.last = zs
 	}
@@ -148,7 +156,7 @@ func (p *RecurProb) queryZone(a *Agent) *Msg {
 	return nil
 }
 
-func (p *RecurProb) findAns(msg *Msg, a *Agent) (bool, *ZoneServers) {
+func (p *RecurProb) findAns(msg *Msg, a *Agent) (bool, *zoneServers) {
 	// look for answer
 	rrs := msg.FilterINRR(func(rr *RR, seg int) bool {
 		if !rr.Name.Equal(p.n) {
@@ -180,7 +188,7 @@ func (p *RecurProb) findAns(msg *Msg, a *Agent) (bool, *ZoneServers) {
 	}
 
 	subzone := rrs[0].Name // we only select the first subzone
-	redirect := &ZoneServers{subzone, []*NameServer{}}
+	redirect := &zoneServers{subzone, []*NameServer{}}
 
 rrloop:
 	for _, rr := range rrs {
@@ -223,7 +231,7 @@ rrloop:
 		panic("where are my redirect servers")
 	}
 
-	p.nscache.AddZone(redirect)
+    a.Cache.AddZone(redirect)
 
 	return false, redirect
 }
@@ -232,7 +240,7 @@ func (p *RecurProb) ExpandVia(a *Agent) {
 	if p.start != nil {
 		p.nextZone(p.start)
 	} else {
-		best := p.nscache.BestFor(p.n)
+		best := a.Cache.BestFor(p.n)
 		if best == nil {
 			// TODO: record no start zone error
 			return
