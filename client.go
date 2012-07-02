@@ -13,7 +13,7 @@ func NewClient() *Client {
 	return &Client{NewConn(), DefNSCache}
 }
 
-func (c *Client) Solve(p ProbCase, log io.Writer) {
+func (c *Client) Solve(p Prob, log io.Writer) {
 	solver := NewSolver(c.conn, log)
 	solver.UseCache(c.cache)
 	solver.Solve(p)
