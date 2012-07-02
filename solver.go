@@ -4,7 +4,7 @@ import (
 	"./pson"
 	"fmt"
 	"io"
-    "time"
+	"time"
 )
 
 const (
@@ -12,37 +12,37 @@ const (
 )
 
 type Agent interface {
-    Query(host *IPv4, name *Name, t uint16) (resp *Response)
-    SolveSub(p Prob)
-    Log(s string, args ...string)
-    Cache(servers *ZoneServers)
-    QueryCache(zone *Name) *ZoneServers
+	Query(host *IPv4, name *Name, t uint16) (resp *Response)
+	SolveSub(p Prob)
+	Log(s string, args ...string)
+	Cache(servers *ZoneServers)
+	QueryCache(zone *Name) *ZoneServers
 }
 
 type Solver interface {
-    Solve(p Prob)
+	Solve(p Prob)
 }
 
 // a solver solves a problem recursively
 // and records the message history
 type solver struct {
-	conn   *Conn
-	p      *pson.Printer
-	log    io.Writer
-	signal chan error
-    cache *NSCache
-    Prob Prob
-    checkpoint time.Time
+	conn       *Conn
+	p          *pson.Printer
+	log        io.Writer
+	signal     chan error
+	cache      *NSCache
+	Prob       Prob
+	checkpoint time.Time
 }
 
 func NewSolver(conn *Conn, log io.Writer) Solver {
-	return &solver {
-        conn: conn, 
-        p: pson.NewPrinter(),
-        log: log, 
-        signal: make(chan error, 1), 
-        cache: DefNSCache,
-    }
+	return &solver{
+		conn:   conn,
+		p:      pson.NewPrinter(),
+		log:    log,
+		signal: make(chan error, 1),
+		cache:  DefNSCache,
+	}
 }
 
 func (s *solver) flushLog() {
@@ -52,32 +52,32 @@ func (s *solver) flushLog() {
 }
 
 func durationStr(d time.Duration) string {
-    ns := d.Nanoseconds()
-    s := ns / 1000000000
-    ms := (ns % 1000000000) / 1000000
-    if ms == 0 && s == 0 {
-        return fmt.Sprintf("+0")
-    }
-    if ms == 0 {
-        return fmt.Sprintf("+%ds", s)
-    }
-    if s == 0 {
-        return fmt.Sprintf("+%dms", ms)
-    }
-    return fmt.Sprintf("+%ds%dms", s, ms)
+	ns := d.Nanoseconds()
+	s := ns / 1000000000
+	ms := (ns % 1000000000) / 1000000
+	if ms == 0 && s == 0 {
+		return fmt.Sprintf("+0")
+	}
+	if ms == 0 {
+		return fmt.Sprintf("+%ds", s)
+	}
+	if s == 0 {
+		return fmt.Sprintf("+%dms", ms)
+	}
+	return fmt.Sprintf("+%ds%dms", s, ms)
 }
 
 func (s *solver) lapse(t time.Time) time.Duration {
-    ret := t.Sub(s.checkpoint)
-    s.checkpoint = t
-    return ret
+	ret := t.Sub(s.checkpoint)
+	s.checkpoint = t
+	return ret
 }
 
 func (s *solver) Query(h *IPv4, n *Name, t uint16) (resp *Response) {
 	for i := 0; i < AGENT_RETRY; i++ {
-        s.Log("?", n.String(), TypeStr(t),
-            fmt.Sprintf("@%s", h), 
-            durationStr(s.lapse(time.Now())))
+		s.Log("?", n.String(), TypeStr(t),
+			fmt.Sprintf("@%s", h),
+			durationStr(s.lapse(time.Now())))
 		s.flushLog()
 		s.conn.SendQuery(h, n, t,
 			func(r *Response, e error) {
@@ -119,23 +119,23 @@ func (s *solver) SolveSub(p Prob) {
 }
 
 func (s *solver) Solve(p Prob) {
-    if s.Prob != nil {
-        panic("using consumed agent")
-    }
-    s.checkpoint = time.Now()
-    s.Prob = p
-    s.SolveSub(p)
-    s.flushLog()
+	if s.Prob != nil {
+		panic("using consumed agent")
+	}
+	s.checkpoint = time.Now()
+	s.Prob = p
+	s.SolveSub(p)
+	s.flushLog()
 }
 
 func (s *solver) Log(str string, args ...string) {
-    s.p.Print(str, args...)
+	s.p.Print(str, args...)
 }
 
 func (s *solver) Cache(servers *ZoneServers) {
-    s.cache.AddZone(servers)
+	s.cache.AddZone(servers)
 }
 
 func (s *solver) QueryCache(zone *Name) *ZoneServers {
-    return s.cache.BestFor(zone)
+	return s.cache.BestFor(zone)
 }

@@ -7,7 +7,7 @@ import (
 )
 
 func TestRecurProb(t *testing.T) {
-    name := makeName("liulonnie.net")
+	name := makeName("liulonnie.net")
 
 	conn, err := NewConn()
 	if err != nil {

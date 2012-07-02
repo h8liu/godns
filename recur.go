@@ -36,7 +36,7 @@ func shuffleServers(servers []*NameServer) []*NameServer {
 	return ret
 }
 
-func (zs *ZoneServers) shuffle()  *ZoneServers {
+func (zs *ZoneServers) shuffle() *ZoneServers {
 	ret := []*NameServer{}
 	nameOnly := []*NameServer{}
 
@@ -54,7 +54,7 @@ func (zs *ZoneServers) shuffle()  *ZoneServers {
 		ret = append(ret, ns)
 	}
 
-    return &ZoneServers{zs.Zone, ret}
+	return &ZoneServers{zs.Zone, ret}
 }
 
 func NewRecurProb(name *Name, t uint16) *RecurProb {
@@ -179,7 +179,7 @@ func (p *RecurProb) findAns(msg *Msg, a Agent) (bool, *ZoneServers) {
 rrloop:
 	for _, rr := range rrs {
 		if !rr.Name.Equal(subzone) {
-            a.Log("warning:", "multiple subzones")
+			a.Log("warning:", "multiple subzones")
 			continue
 		}
 		if rr.Class != IN || rr.Type != NS {
@@ -217,7 +217,7 @@ rrloop:
 		panic("where are my redirect servers")
 	}
 
-    a.Cache(redirect)
+	a.Cache(redirect)
 
 	return false, redirect
 }
@@ -225,32 +225,32 @@ rrloop:
 var rootServers = makeRootServers()
 
 func makeRootServers() *ZoneServers {
-    ns := func (n string, ip string) *NameServer {
-        return &NameServer {
-            Name: makeName(fmt.Sprintf("%s.root-servers.net", n)),
-            Ips: []*IPv4 { ParseIP(ip) },
-        }
-    }
-    
-    // see en.wikipedia.org/wiki/Root_name_server for reference
-    // (since year 2012)
-    return &ZoneServers{ Zone: makeName("."),
-        Servers: []*NameServer {
-            ns("a", "192.41.0.4"),
-            ns("b", "192.228.79.201"),
-            ns("c", "192.33.4.12"),
-            ns("d", "128.8.10.90"),
-            ns("e", "192.203.230.10"),
-            ns("f", "192.5.5.241"),
-            ns("g", "192.112.36.4"),
-            ns("h", "128.63.2.53"),
-            ns("i", "192.36.148.17"),
-            ns("j", "198.41.0.10"),
-            ns("k", "193.0.14.129"),
-            ns("l", "199.7.83.42"),
-            ns("m", "202.12.27.33"),
-        },
-    }
+	ns := func(n string, ip string) *NameServer {
+		return &NameServer{
+			Name: makeName(fmt.Sprintf("%s.root-servers.net", n)),
+			Ips:  []*IPv4{ParseIP(ip)},
+		}
+	}
+
+	// see en.wikipedia.org/wiki/Root_name_server for reference
+	// (since year 2012)
+	return &ZoneServers{Zone: makeName("."),
+		Servers: []*NameServer{
+			ns("a", "192.41.0.4"),
+			ns("b", "192.228.79.201"),
+			ns("c", "192.33.4.12"),
+			ns("d", "128.8.10.90"),
+			ns("e", "192.203.230.10"),
+			ns("f", "192.5.5.241"),
+			ns("g", "192.112.36.4"),
+			ns("h", "128.63.2.53"),
+			ns("i", "192.36.148.17"),
+			ns("j", "198.41.0.10"),
+			ns("k", "193.0.14.129"),
+			ns("l", "199.7.83.42"),
+			ns("m", "202.12.27.33"),
+		},
+	}
 }
 
 func (p *RecurProb) ExpandVia(a Agent) {
@@ -259,7 +259,7 @@ func (p *RecurProb) ExpandVia(a Agent) {
 	} else {
 		best := a.QueryCache(p.n)
 		if best == nil {
-            best = rootServers
+			best = rootServers
 		}
 		p.nextZone(best)
 	}

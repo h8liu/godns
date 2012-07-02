@@ -49,11 +49,11 @@ func (n *Name) String() string {
 
 // for programming use, will panic on fail
 func makeName(s string) *Name {
-    ret, err := NewName(s)
-    if err != nil {
-        panic(fmt.Sprintf("makeName failed: %s", s))
-    }
-    return ret
+	ret, err := NewName(s)
+	if err != nil {
+		panic(fmt.Sprintf("makeName failed: %s", s))
+	}
+	return ret
 }
 
 func NewName(s string) (ret *Name, e error) {
@@ -147,14 +147,14 @@ func (n *Name) ParentOf(other *Name) bool {
 }
 
 func (n *Name) IsRoot() bool {
-    return len(n.labels) == 0
+	return len(n.labels) == 0
 }
 
 func (n *Name) Parent() *Name {
-    if n.IsRoot() {
-        return nil
-    }
-    labels := make([]string, len(n.labels) - 1)
-    copy(labels, n.labels[1:])
-    return &Name{labels}
+	if n.IsRoot() {
+		return nil
+	}
+	labels := make([]string, len(n.labels)-1)
+	copy(labels, n.labels[1:])
+	return &Name{labels}
 }

@@ -180,7 +180,7 @@ func (rr *RR) PsonTo(p *pson.Printer) {
 	p.Print(rr.Name.String(), slist...)
 	if expand != nil {
 		p.Indent()
-        expand(p)
+		expand(p)
 		p.EndIndent()
 	}
 }
