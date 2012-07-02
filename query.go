@@ -38,10 +38,10 @@ type recvBuf struct {
 
 // a parsed response
 type Response struct {
-	Msg  *Msg
-	Host *IPv4
-	Port uint16
-	Time time.Time
+	Msg      *Msg
+	Host     *IPv4
+	Port     uint16
+	RecvTime time.Time
 }
 
 // encapsulate background thread error
@@ -258,14 +258,14 @@ func (c *Conn) Close() {
 }
 
 // creates a connection
-func NewConn() (c *Conn, e error) {
+func NewConn() *Conn {
 	ret := new(Conn)
 	ret.conn = nil
 	ret.jobs = map[uint16]*queryJob{}
 	ret.started = false
 	ret.LogWith(StderrLogger)
 
-	return ret, nil
+	return ret
 }
 
 func (c *Conn) ensureStarted() error {

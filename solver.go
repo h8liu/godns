@@ -20,8 +20,8 @@ type Agent interface {
 }
 
 type Solver interface {
-	Solve(p Prob)
-    UseCache(c *NSCache)
+	Solve(p ProbCase)
+	UseCache(c *NSCache)
 }
 
 // a solver solves a problem recursively
@@ -35,7 +35,7 @@ type solver struct {
 	log        io.Writer
 	signal     chan error
 	cache      *NSCache
-	Prob       Prob
+	prob       Prob
 	checkpoint time.Time
 }
 
@@ -50,7 +50,7 @@ func NewSolver(conn *Conn, log io.Writer) Solver {
 }
 
 func (s *solver) UseCache(c *NSCache) {
-    s.cache = c
+	s.cache = c
 }
 
 func (s *solver) flushLog() {
@@ -83,7 +83,7 @@ func (s *solver) lapse(t time.Time) time.Duration {
 
 func (s *solver) Query(h *IPv4, n *Name, t uint16) (resp *Response) {
 	for i := 0; i < AGENT_RETRY; i++ {
-		s.Log("?", n.String(), TypeStr(t),
+		s.Log("q", n.String(), TypeStr(t),
 			fmt.Sprintf("@%s", h),
 			durationStr(s.lapse(time.Now())))
 		s.flushLog()
@@ -94,12 +94,12 @@ func (s *solver) Query(h *IPv4, n *Name, t uint16) (resp *Response) {
 			})
 		err := <-s.signal
 		if err == nil {
-			s.p.PrintIndent(".", durationStr(s.lapse(resp.Time)))
+			s.p.PrintIndent("a", durationStr(s.lapse(resp.RecvTime)))
 			resp.Msg.PsonTo(s.p)
 			s.p.EndIndent()
 			return
 		}
-		s.Log("!", err.Error(), durationStr(s.lapse(time.Now())))
+		s.Log("err", err.Error(), durationStr(s.lapse(time.Now())))
 	}
 
 	return nil
@@ -126,12 +126,13 @@ func (s *solver) SolveSub(p Prob) {
 	}
 }
 
-func (s *solver) Solve(p Prob) {
-	if s.Prob != nil {
+func (s *solver) Solve(c ProbCase) {
+	if s.prob != nil {
 		panic("agent consumed already")
 	}
 	s.checkpoint = time.Now()
-	s.Prob = p
+	p := c.Prob()
+	s.prob = p
 	s.SolveSub(p)
 	s.flushLog()
 }

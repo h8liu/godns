@@ -11,7 +11,7 @@ func testToken(t *testing.T, s string, e string) {
 }
 
 func TestPson(t *testing.T) {
-	p := NewPrinter()
+	p := NewPson()
 	p.Print("a")
 	p.Print("b", "hi", "yes")
 	p.Indent()

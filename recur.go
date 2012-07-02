@@ -7,7 +7,7 @@ import (
 
 // recursively query through the DNS hierarchy
 type RecurProb interface {
-	Prob() Prob
+	ProbCase
 }
 
 type recurProb struct {

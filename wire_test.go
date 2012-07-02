@@ -8,7 +8,7 @@ import (
 func TestQueryRoot(t *testing.T) {
 	conn, err := net.ListenPacket("udp4", ":0")
 	if err != nil {
-		t.Fatalf("network: %s", err)
+		t.Fatalf("conn: %s", err)
 	}
 	defer conn.Close()
 	raddr := &net.UDPAddr{net.ParseIP("198.41.0.4"), 53}
@@ -33,16 +33,14 @@ func TestQueryRoot(t *testing.T) {
 		t.Fatalf("parse: %s", err)
 	}
 	s := msg.String()
-	t.Logf("msg: \n%s\n", s)
+	t.Logf("msg: \n%s", s)
 }
 
 func TestQuerier(t *testing.T) {
 	name := makeName("liulonnie.net")
 
-	conn, err := NewConn()
-	if err != nil {
-		t.Fatalf("NewConn: %s", err)
-	}
+	conn := NewConn()
+	defer conn.Close()
 
 	resp, err := conn.Query(ParseIP("198.41.0.4"), name, A)
 	// resp, err := conn.QueryHost(ParseIP("192.168.0.1"), name, A)

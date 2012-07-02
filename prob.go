@@ -6,3 +6,7 @@ type Prob interface {
 	ExpandVia(a Agent)
 	Title() (name string, meta []string)
 }
+
+type ProbCase interface {
+	Prob() Prob
+}
