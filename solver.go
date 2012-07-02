@@ -35,7 +35,7 @@ type solver struct {
 	log        io.Writer
 	signal     chan error
 	cache      *NSCache
-	rootCase       ProbCase
+	rootCase   ProbCase
 	checkpoint time.Time
 }
 
@@ -106,7 +106,7 @@ func (s *solver) Query(h *IPv4, n *Name, t uint16) (resp *Response) {
 }
 
 func (s *solver) SolveSub(c ProbCase) {
-    p := c.Prob()
+	p := c.Prob()
 	name, meta := p.Title()
 	if meta == nil {
 		s.Log(name)
