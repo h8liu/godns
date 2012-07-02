@@ -1,11 +1,7 @@
 package dns
 
-import (
-	"./pson"
-)
-
 type Rdata interface {
-	pson() ([]string, func(p *pson.Printer))
+	pson() ([]string, func(p *Pson))
 	writeTo(w *writer) error
 	readFrom(r *reader, n uint16) error
 }
@@ -15,7 +11,7 @@ type RdBytes struct {
 	Data []byte
 }
 
-func (rd *RdBytes) pson() ([]string, func(p *pson.Printer)) {
+func (rd *RdBytes) pson() ([]string, func(p *Pson)) {
 	return []string{}, nil
 }
 
@@ -34,7 +30,7 @@ type RdIP struct {
 	Ip *IPv4
 }
 
-func (rd *RdIP) pson() ([]string, func(p *pson.Printer)) {
+func (rd *RdIP) pson() ([]string, func(p *Pson)) {
 	return []string{rd.Ip.String()}, nil
 }
 
@@ -62,7 +58,7 @@ type RdName struct {
 	Name *Name
 }
 
-func (r *RdName) pson() ([]string, func(p *pson.Printer)) {
+func (r *RdName) pson() ([]string, func(p *Pson)) {
 	return []string{r.Name.String()}, nil
 }
 

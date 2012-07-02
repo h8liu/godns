@@ -1,4 +1,4 @@
-package pson
+package dns
 
 import (
 	"testing"

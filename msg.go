@@ -1,7 +1,6 @@
 package dns
 
 import (
-	"./pson"
 	"fmt"
 	"math/rand"
 )
@@ -154,7 +153,7 @@ func TTLStr(t uint32) string {
 	return ret
 }
 
-func (q *Ques) PsonTo(p *pson.Printer) {
+func (q *Ques) PsonTo(p *Pson) {
 	slist := make([]string, 0)
 	if q.Type != A {
 		slist = append(slist, TypeStr(q.Type))
@@ -165,7 +164,7 @@ func (q *Ques) PsonTo(p *pson.Printer) {
 	p.Print(q.Name.String(), slist...)
 }
 
-func (rr *RR) PsonTo(p *pson.Printer) {
+func (rr *RR) PsonTo(p *Pson) {
 	slist := make([]string, 0)
 
 	slist = append(slist, TypeStr(rr.Type))
@@ -185,7 +184,7 @@ func (rr *RR) PsonTo(p *pson.Printer) {
 	}
 }
 
-func psonSection(p *pson.Printer, rrs []RR, sec string) {
+func psonSection(p *Pson, rrs []RR, sec string) {
 	if len(rrs) == 0 {
 		return
 	}
@@ -196,7 +195,7 @@ func psonSection(p *pson.Printer, rrs []RR, sec string) {
 	p.EndIndent()
 }
 
-func (m *Msg) PsonTo(p *pson.Printer) {
+func (m *Msg) PsonTo(p *Pson) {
 	if (m.Flags & F_RESPONSE) != F_RESPONSE {
 		p.Print("//query")
 	}
@@ -254,7 +253,7 @@ func (m *Msg) PsonTo(p *pson.Printer) {
 }
 
 func (m *Msg) String() string {
-	p := pson.NewPrinter()
+	p := NewPson()
 	m.PsonTo(p)
 	p.End()
 

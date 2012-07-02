@@ -1,7 +1,6 @@
 package dns
 
 import (
-	"./pson"
 	"fmt"
 	"io"
 	"time"
@@ -32,7 +31,7 @@ type Solver interface {
 // a single solver instance can only be used for solving one problem
 type solver struct {
 	conn       *Conn
-	p          *pson.Printer
+	p          *Pson
 	log        io.Writer
 	signal     chan error
 	cache      *NSCache
@@ -43,7 +42,7 @@ type solver struct {
 func NewSolver(conn *Conn, log io.Writer) Solver {
 	return &solver{
 		conn:   conn,
-		p:      pson.NewPrinter(),
+		p:      NewPson(),
 		log:    log,
 		signal: make(chan error, 1),
 		cache:  DefNSCache,

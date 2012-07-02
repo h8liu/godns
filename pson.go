@@ -1,4 +1,4 @@
-package pson
+package dns
 
 import (
 	"bytes"
@@ -6,17 +6,17 @@ import (
 	"strings"
 )
 
-type Printer struct {
+type Pson struct {
 	out    bytes.Buffer
 	indent uint
 	ntoken uint
 }
 
-func NewPrinter() *Printer {
-	return new(Printer)
+func NewPson() *Pson {
+	return new(Pson)
 }
 
-func (e *Printer) FlushTo(out io.Writer) (n int, err error) {
+func (e *Pson) FlushTo(out io.Writer) (n int, err error) {
 	n, err = out.Write(e.out.Bytes())
 	if err != nil {
 		return
@@ -25,13 +25,13 @@ func (e *Printer) FlushTo(out io.Writer) (n int, err error) {
 	return
 }
 
-func (e *Printer) Fetch() string {
+func (e *Pson) Fetch() string {
 	ret := string(e.out.Bytes())
 	e.out.Reset()
 	return ret
 }
 
-func (e *Printer) emit(s string) {
+func (e *Pson) emit(s string) {
 	t := Tokenize(s)
 	e.emitToken(t)
 }
@@ -64,7 +64,7 @@ func Tokenize(s string) (t string) {
 	return "'" + s + "'"
 }
 
-func (e *Printer) emitToken(t string) {
+func (e *Pson) emitToken(t string) {
 	if e.ntoken == 0 {
 		for i := uint(0); i < e.indent; i++ {
 			e.out.Write([]byte("    "))
@@ -76,12 +76,12 @@ func (e *Printer) emitToken(t string) {
 	e.ntoken++
 }
 
-func (e *Printer) EndLine() {
+func (e *Pson) EndLine() {
 	e.out.Write([]byte("\n"))
 	e.ntoken = 0
 }
 
-func (e *Printer) Print(s string, args ...string) {
+func (e *Pson) Print(s string, args ...string) {
 	if e.ntoken != 0 {
 		e.EndLine()
 	}
@@ -91,18 +91,18 @@ func (e *Printer) Print(s string, args ...string) {
 	}
 }
 
-func (e *Printer) PrintIndent(s string, args ...string) {
+func (e *Pson) PrintIndent(s string, args ...string) {
 	e.Print(s, args...)
 	e.Indent()
 }
 
-func (e *Printer) Indent() {
+func (e *Pson) Indent() {
 	e.emitToken("{")
 	e.EndLine()
 	e.indent++
 }
 
-func (e *Printer) EndIndent() {
+func (e *Pson) EndIndent() {
 	if e.indent == 0 {
 		return // no effect
 	}
@@ -114,7 +114,7 @@ func (e *Printer) EndIndent() {
 	e.EndLine()
 }
 
-func (e *Printer) End() {
+func (e *Pson) End() {
 	if e.ntoken != 0 {
 		e.EndLine()
 	}
