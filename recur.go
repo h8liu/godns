@@ -75,7 +75,7 @@ func (p *recurProb) StartFrom(zone *Name, servers []*NameServer) {
 }
 
 func (p *recurProb) Title() (name string, meta []string) {
-	return "rec", []string{p.n.String(), TypeStr(p.t)}
+	return "recur", []string{p.n.String(), TypeStr(p.t)}
 }
 
 func haveIP(ipList []*IPv4, ip *IPv4) bool {
