@@ -6,7 +6,7 @@ import (
 	// "os"
 )
 
-func TestRecurProb(t *testing.T) {
+func TestRecur(t *testing.T) {
 	name := makeName("liulonnie.net")
 
 	conn, err := NewConn()
@@ -16,7 +16,7 @@ func TestRecurProb(t *testing.T) {
 
 	var buf bytes.Buffer
 	solver := NewSolver(conn, &buf)
-	solver.Solve(NewRecurProb(name, A))
+	solver.Solve(NewRecurProb(name, A).Prob())
 
 	t.Logf("\n %s", buf.String())
 

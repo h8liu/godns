@@ -6,7 +6,11 @@ import (
 )
 
 // recursively query through the DNS hierarchy
-type RecurProb struct {
+type RecurProb interface {
+	Prob() Prob
+}
+
+type recurProb struct {
 	n       *Name
 	t       uint16
 	start   *ZoneServers
@@ -57,8 +61,8 @@ func (zs *ZoneServers) shuffle() *ZoneServers {
 	return &ZoneServers{zs.Zone, ret}
 }
 
-func NewRecurProb(name *Name, t uint16) *RecurProb {
-	ret := new(RecurProb)
+func NewRecurProb(name *Name, t uint16) RecurProb {
+	ret := new(recurProb)
 	ret.n = name
 	ret.t = t
 	ret.answer = nil
@@ -66,11 +70,11 @@ func NewRecurProb(name *Name, t uint16) *RecurProb {
 	return ret
 }
 
-func (p *RecurProb) StartFrom(zone *Name, servers []*NameServer) {
+func (p *recurProb) StartFrom(zone *Name, servers []*NameServer) {
 	p.start = &ZoneServers{zone, servers}
 }
 
-func (p *RecurProb) Title() (name string, meta []string) {
+func (p *recurProb) Title() (name string, meta []string) {
 	return "rec", []string{p.n.String(), TypeStr(p.t)}
 }
 
@@ -83,14 +87,14 @@ func haveIP(ipList []*IPv4, ip *IPv4) bool {
 	return false
 }
 
-func (p *RecurProb) nextZone(zs *ZoneServers) {
+func (p *recurProb) nextZone(zs *ZoneServers) {
 	if zs != nil {
 		p.last = zs
 	}
 	p.current = zs
 }
 
-func (p *RecurProb) queryZone(a Agent) *Msg {
+func (p *recurProb) queryZone(a Agent) *Msg {
 	zone := p.current.shuffle()
 	tried := []*IPv4{}
 
@@ -142,7 +146,7 @@ func (p *RecurProb) queryZone(a Agent) *Msg {
 	return nil
 }
 
-func (p *RecurProb) findAns(msg *Msg, a Agent) (bool, *ZoneServers) {
+func (p *recurProb) findAns(msg *Msg, a Agent) (bool, *ZoneServers) {
 	// look for answer
 	rrs := msg.FilterINRR(func(rr *RR, seg int) bool {
 		if !rr.Name.Equal(p.n) {
@@ -253,7 +257,7 @@ func makeRootServers() *ZoneServers {
 	}
 }
 
-func (p *RecurProb) ExpandVia(a Agent) {
+func (p *recurProb) ExpandVia(a Agent) {
 	if p.start != nil {
 		p.nextZone(p.start)
 	} else {
@@ -269,6 +273,10 @@ func (p *RecurProb) ExpandVia(a Agent) {
 	}
 }
 
-func (p *RecurProb) IndentSub() bool {
+func (p *recurProb) IndentSub() bool {
 	return true
+}
+
+func (p *recurProb) Prob() Prob {
+	return p
 }
