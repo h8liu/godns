@@ -4,10 +4,11 @@ import (
     "time"
 )
 
-// the ns cache is two level map: zone -> server -> ip, with an ip
+// the cache is two level map: zone -> server -> ip
+// each server has an expiration date
 
 type cacheEntry struct {
-    s *zoneServers
+    s *ZoneServers
     expire time.Time
 }
 
@@ -43,7 +44,7 @@ func (c *NSCache) unlock() {
     c.syncLock <- 0
 }
 
-func (c *NSCache) BestFor(name *Name) *zoneServers {
+func (c *NSCache) BestFor(name *Name) *ZoneServers {
     c.lock()
     defer c.unlock()
 
@@ -58,8 +59,8 @@ func (c *NSCache) BestFor(name *Name) *zoneServers {
 	return nil
 }
 
-func (c *NSCache) AddZone(zs *zoneServers) {
-	c.AddServer(zs.zone, zs.servers...)
+func (c *NSCache) AddZone(zs *ZoneServers) {
+	c.AddServer(zs.Zone, zs.Servers...)
 }
 
 func (c *NSCache) AddServer(zone *Name, servers ...*NameServer) {

@@ -4,23 +4,19 @@ import (
 	"./pson"
 )
 
-type rdata interface {
-	pson() ([]string, bool)
-	psonMore(p *pson.Printer)
+type Rdata interface {
+	pson() ([]string, func (p *pson.Printer))
 	writeTo(w *writer) error
 	readFrom(r *reader, n uint16) error
 }
 
 // for rdata of a string of a byte array, like txt records
 type RdBytes struct {
-	data []byte
+	Data []byte
 }
 
-func (rd *RdBytes) pson() ([]string, bool) {
-	return []string{}, false
-}
-
-func (rd *RdBytes) psonMore(p *pson.Printer) {
+func (rd *RdBytes) pson() ([]string, func (p *pson.Printer)) {
+	return []string{}, nil
 }
 
 func (rd *RdBytes) writeTo(w *writer) error {
@@ -29,24 +25,21 @@ func (rd *RdBytes) writeTo(w *writer) error {
 }
 
 func (rd *RdBytes) readFrom(r *reader, n uint16) error {
-	rd.data = make([]byte, n)
-	return r.readBytes(rd.data)
+	rd.Data = make([]byte, n)
+	return r.readBytes(rd.Data)
 }
 
 // for rdatas of a single ip address, like a records
 type RdIP struct {
-	ip *IPv4
+	Ip *IPv4
 }
 
-func (rd *RdIP) pson() ([]string, bool) {
-	return []string{rd.ip.String()}, false
-}
-
-func (rd *RdIP) psonMore(p *pson.Printer) {
+func (rd *RdIP) pson() ([]string, func (p *pson.Printer)) {
+	return []string{rd.Ip.String()}, nil
 }
 
 func (rd *RdIP) writeTo(w *writer) error {
-	w.writeBytes(rd.ip.Bytes())
+	w.writeBytes(rd.Ip.Bytes())
 	return nil
 }
 
@@ -58,7 +51,7 @@ func (rd *RdIP) readFrom(r *reader, n uint16) (err error) {
 	if err = r.readBytes(buf); err != nil {
 		return err
 	}
-	if rd.ip = IPFromBytes(buf); rd.ip == nil {
+	if rd.Ip = IPFromBytes(buf); rd.Ip == nil {
 		return &ParseError{"make ip from bytes"}
 	}
 	return nil
@@ -66,24 +59,21 @@ func (rd *RdIP) readFrom(r *reader, n uint16) (err error) {
 
 // for rdatas of a single name, like ns records
 type RdName struct {
-	name *Name
+	Name *Name
 }
 
-func (r *RdName) pson() ([]string, bool) {
-	return []string{r.name.String()}, false
-}
-
-func (rd *RdName) psonMore(p *pson.Printer) {
+func (r *RdName) pson() ([]string, func (p *pson.Printer)) {
+	return []string{r.Name.String()}, nil
 }
 
 func (rd *RdName) writeTo(w *writer) error {
 	panic("not implemented")
-	w.writeName(rd.name)
+	w.writeName(rd.Name)
 	return nil
 }
 
 func (rd *RdName) readFrom(r *reader, n uint16) (err error) {
-	rd.name, err = r.readName()
+	rd.Name, err = r.readName()
 	if err != nil {
 		return err
 	}

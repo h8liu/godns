@@ -165,7 +165,7 @@ func (r *reader) readRR(ret *RR) (err error) {
 	return nil
 }
 
-func (r *reader) readRdata(c, t, n uint16) (ret rdata, e error) {
+func (r *reader) readRdata(c, t, n uint16) (ret Rdata, e error) {
 	if c == IN {
 		switch t {
 		default:

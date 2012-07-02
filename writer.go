@@ -82,7 +82,7 @@ func (w *writer) writeRR(rr *RR) (err error) {
 	return nil
 }
 
-func (w *writer) writeRdata(rd rdata) (err error) {
+func (w *writer) writeRdata(rd Rdata) (err error) {
 	panic("not implemented")
 }
 

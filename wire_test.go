@@ -12,11 +12,7 @@ func TestQueryRoot(t *testing.T) {
 	}
 	defer conn.Close()
 	raddr := &net.UDPAddr{net.ParseIP("198.41.0.4"), 53}
-	name, err := NewName("liulonnie.net")
-	if err != nil {
-		t.Fatalf("NewName: %s", err)
-	}
-	msg := NewQuesMsg(name, A)
+	msg := NewQuesMsg(makeName("liulonnie.net"), A)
 	buf, err := msg.Wire()
 	if buf == nil || err != nil {
 		t.Fatalf("Wire: %s", err)
@@ -41,10 +37,7 @@ func TestQueryRoot(t *testing.T) {
 }
 
 func TestQuerier(t *testing.T) {
-	name, err := NewName("liulonnie.net")
-	if err != nil {
-		t.Fatalf("name: %s", err)
-	}
+    name := makeName("liulonnie.net")
 
 	conn, err := NewConn()
 	if err != nil {

@@ -26,7 +26,7 @@ type RR struct {
 	Type  uint16
 	Class uint16
 	TTL   uint32
-	Rdata rdata
+	Rdata Rdata
 }
 
 func NewQuesMsg(n *Name, t uint16) (ret *Msg) {
@@ -178,9 +178,9 @@ func (rr *RR) PsonTo(p *pson.Printer) {
 		slist = append(slist, ClassStr(rr.Class))
 	}
 	p.Print(rr.Name.String(), slist...)
-	if expand {
+	if expand != nil {
 		p.Indent()
-		rr.Rdata.psonMore(p)
+        expand(p)
 		p.EndIndent()
 	}
 }

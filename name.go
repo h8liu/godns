@@ -47,6 +47,15 @@ func (n *Name) String() string {
 	return "."
 }
 
+// for programming use, will panic on fail
+func makeName(s string) *Name {
+    ret, err := NewName(s)
+    if err != nil {
+        panic(fmt.Sprintf("makeName failed: %s", s))
+    }
+    return ret
+}
+
 func NewName(s string) (ret *Name, e error) {
 	if len(s) == 0 {
 		return nil, &NameError{s, "empty name"}

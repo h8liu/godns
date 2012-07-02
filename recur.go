@@ -9,20 +9,20 @@ import (
 type RecurProb struct {
 	n       *Name
 	t       uint16
-	start   *zoneServers
-	current *zoneServers
-	last    *zoneServers
+	start   *ZoneServers
+	current *ZoneServers
+	last    *ZoneServers
 	answer  *Msg
 }
 
-type zoneServers struct {
-	zone    *Name
-	servers []*NameServer
+type ZoneServers struct {
+	Zone    *Name
+	Servers []*NameServer
 }
 
 type NameServer struct {
-	name *Name
-	ips  []*IPv4
+	Name *Name
+	Ips  []*IPv4
 }
 
 func shuffleServers(servers []*NameServer) []*NameServer {
@@ -36,38 +36,25 @@ func shuffleServers(servers []*NameServer) []*NameServer {
 	return ret
 }
 
-func (ns *NameServer) clone() *NameServer {
-    ret := &NameServer{ns.name, make([]*IPv4, len(ns.ips))}
-    copy(ret.ips, ns.ips)
-    return ret
-}
-
-func (zs *zoneServers) clone() *zoneServers {
-    ret := &zoneServers{zs.zone, make([]*NameServer, len(zs.servers))}
-    for i, ns := range zs.servers {
-        ret.servers[i] = ns.clone()
-    }
-    return ret
-}
-
-func (zs *zoneServers) shuffle() {
-	res := []*NameServer{}
+func (zs *ZoneServers) shuffle()  *ZoneServers {
+	ret := []*NameServer{}
 	nameOnly := []*NameServer{}
 
-	for _, ns := range zs.servers {
-		if len(ns.ips) == 0 {
+	for _, ns := range zs.Servers {
+		if len(ns.Ips) == 0 {
 			nameOnly = append(nameOnly, ns)
 		} else {
-			res = append(res, ns)
+			ret = append(ret, ns)
 		}
 	}
 
-	res = shuffleServers(res)
+	ret = shuffleServers(ret)
 	nameOnly = shuffleServers(nameOnly)
 	for _, ns := range nameOnly {
-		res = append(res, ns)
+		ret = append(ret, ns)
 	}
-	zs.servers = res
+
+    return &ZoneServers{zs.Zone, ret}
 }
 
 func NewRecurProb(name *Name, t uint16) *RecurProb {
@@ -80,7 +67,7 @@ func NewRecurProb(name *Name, t uint16) *RecurProb {
 }
 
 func (p *RecurProb) StartFrom(zone *Name, servers []*NameServer) {
-	p.start = &zoneServers{zone, servers}
+	p.start = &ZoneServers{zone, servers}
 }
 
 func (p *RecurProb) Title() (name string, meta []string) {
@@ -96,54 +83,53 @@ func haveIP(ipList []*IPv4, ip *IPv4) bool {
 	return false
 }
 
-func (p *RecurProb) nextZone(zs *zoneServers) {
+func (p *RecurProb) nextZone(zs *ZoneServers) {
 	if zs != nil {
 		p.last = zs
 	}
 	p.current = zs
 }
 
-func (p *RecurProb) queryZone(a *Agent) *Msg {
-	zone := p.current
-	zone.shuffle()
+func (p *RecurProb) queryZone(a Agent) *Msg {
+	zone := p.current.shuffle()
 	tried := []*IPv4{}
 
-	for _, server := range zone.servers {
-		if len(server.ips) == 0 {
+	for _, server := range zone.Servers {
+		if len(server.Ips) == 0 {
 			// TODO: ask IP first. will do this after AddrProb is done
 		}
-		if len(server.ips) == 0 {
+		if len(server.Ips) == 0 {
 			continue
 		}
-		for _, ip := range server.ips {
+		for _, ip := range server.Ips {
 			if haveIP(tried, ip) {
 				continue
 			}
 			tried = append(tried, ip)
-			a.p.Print("//as",
-				zone.zone.String(),
-				fmt.Sprintf("@%s(%s)", server.name.String(), ip.String()))
+			a.Log("//as",
+				zone.Zone.String(),
+				fmt.Sprintf("@%s(%s)", server.Name.String(), ip.String()))
 			resp := a.Query(ip, p.n, p.t)
 			if resp == nil {
-				a.p.Print("//unreachable", server.name.String())
+				a.Log("//unreachable", server.Name.String())
 				continue
 			}
 
 			msg := resp.Msg
 			rcode := msg.Flags & F_RCODEMASK
 			if !(rcode == RCODE_OKAY || rcode == RCODE_NAMEERROR) {
-				a.p.Print("//svrerror", server.name.String())
+				a.Log("//svrerror", server.Name.String())
 				continue
 			}
 
 			found, redirect := p.findAns(msg, a)
 			if found {
-				a.p.Print("//found")
+				a.Log("//found")
 				p.nextZone(nil)
 				return msg
 			} else {
 				if redirect == nil {
-					a.p.Print("//non-exist")
+					a.Log("//non-exist")
 				}
 				p.nextZone(redirect)
 				return nil
@@ -156,7 +142,7 @@ func (p *RecurProb) queryZone(a *Agent) *Msg {
 	return nil
 }
 
-func (p *RecurProb) findAns(msg *Msg, a *Agent) (bool, *zoneServers) {
+func (p *RecurProb) findAns(msg *Msg, a Agent) (bool, *ZoneServers) {
 	// look for answer
 	rrs := msg.FilterINRR(func(rr *RR, seg int) bool {
 		if !rr.Name.Equal(p.n) {
@@ -174,7 +160,7 @@ func (p *RecurProb) findAns(msg *Msg, a *Agent) (bool, *zoneServers) {
 			return false
 		}
 		name := rr.Name
-		if !name.SubOf(p.current.zone) {
+		if !name.SubOf(p.current.Zone) {
 			return false
 		}
 		if !name.Equal(p.n) && !name.ParentOf(p.n) {
@@ -188,12 +174,12 @@ func (p *RecurProb) findAns(msg *Msg, a *Agent) (bool, *zoneServers) {
 	}
 
 	subzone := rrs[0].Name // we only select the first subzone
-	redirect := &zoneServers{subzone, []*NameServer{}}
+	redirect := &ZoneServers{subzone, []*NameServer{}}
 
 rrloop:
 	for _, rr := range rrs {
 		if !rr.Name.Equal(subzone) {
-			a.p.Print("warning", "multiple subzones")
+            a.Log("warning:", "multiple subzones")
 			continue
 		}
 		if rr.Class != IN || rr.Type != NS {
@@ -204,9 +190,9 @@ rrloop:
 			panic("redirect record is not RdName")
 		}
 
-		nsName := nsData.name
-		for _, s := range redirect.servers {
-			if nsName.Equal(s.name) {
+		nsName := nsData.Name
+		for _, s := range redirect.Servers {
+			if nsName.Equal(s.Name) {
 				continue rrloop
 			}
 		}
@@ -217,33 +203,63 @@ rrloop:
 				return false
 			}
 			ipData, ok := rr.Rdata.(*RdIP)
-			if !ok || ipData.ip == nil {
+			if !ok || ipData.Ip == nil {
 				return false
 			}
-			ns.ips = append(ns.ips, ipData.ip)
+			ns.Ips = append(ns.Ips, ipData.Ip)
 			return false // handled already
 		})
 
-		redirect.servers = append(redirect.servers, ns)
+		redirect.Servers = append(redirect.Servers, ns)
 	}
 
-	if len(redirect.servers) == 0 {
+	if len(redirect.Servers) == 0 {
 		panic("where are my redirect servers")
 	}
 
-    a.Cache.AddZone(redirect)
+    a.Cache(redirect)
 
 	return false, redirect
 }
 
-func (p *RecurProb) ExpandVia(a *Agent) {
+var rootServers = makeRootServers()
+
+func makeRootServers() *ZoneServers {
+    ns := func (n string, ip string) *NameServer {
+        return &NameServer {
+            Name: makeName(fmt.Sprintf("%s.root-servers.net", n)),
+            Ips: []*IPv4 { ParseIP(ip) },
+        }
+    }
+    
+    // see en.wikipedia.org/wiki/Root_name_server for reference
+    // (since year 2012)
+    return &ZoneServers{ Zone: makeName("."),
+        Servers: []*NameServer {
+            ns("a", "192.41.0.4"),
+            ns("b", "192.228.79.201"),
+            ns("c", "192.33.4.12"),
+            ns("d", "128.8.10.90"),
+            ns("e", "192.203.230.10"),
+            ns("f", "192.5.5.241"),
+            ns("g", "192.112.36.4"),
+            ns("h", "128.63.2.53"),
+            ns("i", "192.36.148.17"),
+            ns("j", "198.41.0.10"),
+            ns("k", "193.0.14.129"),
+            ns("l", "199.7.83.42"),
+            ns("m", "202.12.27.33"),
+        },
+    }
+}
+
+func (p *RecurProb) ExpandVia(a Agent) {
 	if p.start != nil {
 		p.nextZone(p.start)
 	} else {
-		best := a.Cache.BestFor(p.n)
+		best := a.QueryCache(p.n)
 		if best == nil {
-			// TODO: record no start zone error
-			return
+            best = rootServers
 		}
 		p.nextZone(best)
 	}
