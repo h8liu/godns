@@ -11,6 +11,7 @@ const (
 	AGENT_RETRY = 3
 )
 
+// the instruction set that a problem can use
 type Agent interface {
 	Query(host *IPv4, name *Name, t uint16) (resp *Response)
 	SolveSub(p Prob)
@@ -21,10 +22,14 @@ type Agent interface {
 
 type Solver interface {
 	Solve(p Prob)
+    UseCache(c *NSCache)
 }
 
 // a solver solves a problem recursively
-// and records the message history
+// it serves as an execution engine for a problem
+// and at the same time serves as a problem solver to the client
+// it also records the message history through the solving proc
+// a single solver instance can only be used for solving one problem
 type solver struct {
 	conn       *Conn
 	p          *pson.Printer
@@ -43,6 +48,10 @@ func NewSolver(conn *Conn, log io.Writer) Solver {
 		signal: make(chan error, 1),
 		cache:  DefNSCache,
 	}
+}
+
+func (s *solver) UseCache(c *NSCache) {
+    s.cache = c
 }
 
 func (s *solver) flushLog() {
@@ -120,7 +129,7 @@ func (s *solver) SolveSub(p Prob) {
 
 func (s *solver) Solve(p Prob) {
 	if s.Prob != nil {
-		panic("using consumed agent")
+		panic("agent consumed already")
 	}
 	s.checkpoint = time.Now()
 	s.Prob = p
