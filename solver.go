@@ -13,7 +13,7 @@ const (
 // the instruction set that a problem can use
 type Agent interface {
 	Query(host *IPv4, name *Name, t uint16) (resp *Response)
-	SolveSub(p Prob)
+	SolveSub(p ProbCase)
 	Log(s string, args ...string)
 	Cache(servers *ZoneServers)
 	QueryCache(zone *Name) *ZoneServers
@@ -35,7 +35,7 @@ type solver struct {
 	log        io.Writer
 	signal     chan error
 	cache      *NSCache
-	prob       Prob
+	rootCase       ProbCase
 	checkpoint time.Time
 }
 
@@ -105,7 +105,8 @@ func (s *solver) Query(h *IPv4, n *Name, t uint16) (resp *Response) {
 	return nil
 }
 
-func (s *solver) SolveSub(p Prob) {
+func (s *solver) SolveSub(c ProbCase) {
+    p := c.Prob()
 	name, meta := p.Title()
 	if meta == nil {
 		s.Log(name)
@@ -127,13 +128,12 @@ func (s *solver) SolveSub(p Prob) {
 }
 
 func (s *solver) Solve(c ProbCase) {
-	if s.prob != nil {
+	if s.rootCase != nil {
 		panic("agent consumed already")
 	}
 	s.checkpoint = time.Now()
-	p := c.Prob()
-	s.prob = p
-	s.SolveSub(p)
+	s.rootCase = c
+	s.SolveSub(c)
 	s.flushLog()
 }
 
