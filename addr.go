@@ -1,9 +1,8 @@
 package dns
 
 type AddrProb interface {
-    Prob
+	Prob
 }
 
 type addrProb struct {
-    
 }

@@ -290,7 +290,6 @@ func (c *Conn) SendQuery(h *IPv4, n *Name, t uint16, cb QueryCallback) {
 }
 
 func (c *Conn) Query(h *IPv4, n *Name, t uint16) (re *Response, err error) {
-
 	signal := make(chan error, 1)
 	c.SendQuery(h, n, t, func(r *Response, e error) {
 		re = r
