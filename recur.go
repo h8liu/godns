@@ -11,12 +11,16 @@ type RecurProb interface {
 }
 
 type recurProb struct {
-	n       *Name
-	t       uint16
-	start   *ZoneServers
-	current *ZoneServers
-	last    *ZoneServers
-	answer  *Msg
+	n             *Name
+	t             uint16
+	start         *ZoneServers
+	current       *ZoneServers
+	last          *ZoneServers
+	answer        *Msg
+	ansZone       *ZoneServers
+	ansServerZone *Name
+	ansServerName *Name
+	ansServerIP   *IPv4
 }
 
 type ZoneServers struct {
@@ -129,6 +133,13 @@ func (p *recurProb) queryZone(a Agent) *Msg {
 			found, redirect := p.findAns(msg, a)
 			if found {
 				a.Log("//found")
+				p.ansZone = &ZoneServers{
+					zone.Zone,
+					[]*NameServer{&NameServer{
+						server.Name,
+						[]*IPv4{ip},
+					}},
+				}
 				p.nextZone(nil)
 				return msg
 			} else {
