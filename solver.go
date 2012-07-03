@@ -113,17 +113,9 @@ func (s *solver) SolveSub(p Prob) {
 		s.Log(name, meta...)
 	}
 
-	indent := p.IndentSub()
-
-	if indent {
-		s.p.Indent()
-	}
-
+	s.p.Indent()
 	p.ExpandVia(s) // solve the problem
-
-	if indent {
-		s.p.EndIndent()
-	}
+	s.p.EndIndent()
 }
 
 func (s *solver) Solve(p Prob) {

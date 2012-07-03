@@ -273,10 +273,6 @@ func (p *recurProb) ExpandVia(a Agent) {
 	}
 }
 
-func (p *recurProb) IndentSub() bool {
-	return true
-}
-
 func (p *recurProb) Prob() Prob {
 	return p
 }
