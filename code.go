@@ -63,3 +63,5 @@ const (
 	AUTH = 2
 	ADDI = 3
 )
+
+const DNS_PORT = 53

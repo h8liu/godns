@@ -145,7 +145,7 @@ func (c *Conn) serve() {
 			buf, err := msg.Wire()
 			if err == nil {
 				ip := job.host.IP()
-				addr := &net.UDPAddr{ip, 53}
+                addr := &net.UDPAddr{IP:ip, Port:DNS_PORT}
 				_, err = c.conn.WriteTo(buf, addr)
 			}
 
