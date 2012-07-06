@@ -86,8 +86,8 @@ func (s *solver) lapse(t time.Time) time.Duration {
 }
 
 func (s *solver) Query(h *IPv4, n *Name, t uint16) (resp *Response) {
-	if s.count >= SOLVER_MAX_DEPTH {
-		s.Log("err", "too many queries")
+	if s.count >= SOLVER_MAX_QUERY {
+		s.Log("err", fmt.Sprintf("too many queries (%d)", s.count))
 		return nil // max count
 	}
 	s.count++

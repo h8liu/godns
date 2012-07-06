@@ -27,6 +27,9 @@ func (p *RecordProb) interested(tp uint16) bool {
 
 func (p *RecordProb) collectRecords(recur *RecurProb) {
 	for _, r := range recur.History {
+		if r.Resp == nil {
+			continue
+		}
 		msg := r.Resp.Msg
 		records := msg.FilterINRR(func(rr *RR, seg int) bool {
 			return rr.Name.Equal(p.name) && p.interested(rr.Type)
