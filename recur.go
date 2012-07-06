@@ -6,21 +6,15 @@ import (
 )
 
 // recursively query through the DNS hierarchy
-type RecurProb interface {
-	Prob
-}
-
-type recurProb struct {
-	n             *Name
-	t             uint16
-	start         *ZoneServers
-	current       *ZoneServers
-	last          *ZoneServers
-	answer        *Msg
-	ansZone       *ZoneServers
-	ansServerZone *Name
-	ansServerName *Name
-	ansServerIP   *IPv4
+type RecurProb struct {
+	n           *Name
+	t           uint16
+	start       *ZoneServers
+	current     *ZoneServers
+	last        *ZoneServers
+	Answer      *Msg
+	ansZone     *ZoneServers
+	ansServerIP *IPv4
 }
 
 type ZoneServers struct {
@@ -65,20 +59,20 @@ func (zs *ZoneServers) shuffle() *ZoneServers {
 	return &ZoneServers{zs.Zone, ret}
 }
 
-func NewRecurProb(name *Name, t uint16) RecurProb {
-	ret := new(recurProb)
+func NewRecurProb(name *Name, t uint16) *RecurProb {
+	ret := new(RecurProb)
 	ret.n = name
 	ret.t = t
-	ret.answer = nil
+	ret.Answer = nil
 
 	return ret
 }
 
-func (p *recurProb) StartFrom(zone *Name, servers []*NameServer) {
+func (p *RecurProb) StartFrom(zone *Name, servers []*NameServer) {
 	p.start = &ZoneServers{zone, servers}
 }
 
-func (p *recurProb) Title() (name string, meta []string) {
+func (p *RecurProb) Title() (name string, meta []string) {
 	return "recur", []string{p.n.String(), TypeStr(p.t)}
 }
 
@@ -91,14 +85,14 @@ func haveIP(ipList []*IPv4, ip *IPv4) bool {
 	return false
 }
 
-func (p *recurProb) nextZone(zs *ZoneServers) {
+func (p *RecurProb) nextZone(zs *ZoneServers) {
 	if zs != nil {
 		p.last = zs
 	}
 	p.current = zs
 }
 
-func (p *recurProb) queryZone(a Agent) *Msg {
+func (p *RecurProb) queryZone(a Agent) *Msg {
 	zone := p.current.shuffle()
 	tried := []*IPv4{}
 
@@ -157,7 +151,7 @@ func (p *recurProb) queryZone(a Agent) *Msg {
 	return nil
 }
 
-func (p *recurProb) findAns(msg *Msg, a Agent) (bool, *ZoneServers) {
+func (p *RecurProb) findAns(msg *Msg, a Agent) (bool, *ZoneServers) {
 	// look for answer
 	rrs := msg.FilterINRR(func(rr *RR, seg int) bool {
 		if !rr.Name.Equal(p.n) {
@@ -268,7 +262,7 @@ func makeRootServers() *ZoneServers {
 	}
 }
 
-func (p *recurProb) ExpandVia(a Agent) {
+func (p *RecurProb) ExpandVia(a Agent) {
 	if p.start != nil {
 		p.nextZone(p.start)
 	} else {
@@ -280,10 +274,10 @@ func (p *recurProb) ExpandVia(a Agent) {
 	}
 
 	for p.current != nil {
-		p.answer = p.queryZone(a)
+		p.Answer = p.queryZone(a)
 	}
 }
 
-func (p *recurProb) Prob() Prob {
+func (p *RecurProb) Prob() Prob {
 	return p
 }
