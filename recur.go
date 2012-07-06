@@ -13,9 +13,16 @@ type RecurProb struct {
 	current     *ZoneServers
 	last        *ZoneServers
 	Answer      *Msg
-	ansZone     *ZoneServers
-	ansServerIP *IPv4
+	AnsZone     *ZoneServers
+    AnsCode     int
 }
+
+const (
+    BUSY = 0
+    OKAY = iota
+    NONEXIST
+    NORESP
+)
 
 type ZoneServers struct {
 	Zone    *Name
@@ -68,6 +75,7 @@ func NewRecurProb(name *Name, t uint16) *RecurProb {
 	return ret
 }
 
+// TODO: change this interface
 func (p *RecurProb) StartFrom(zone *Name, servers []*NameServer) {
 	p.start = &ZoneServers{zone, servers}
 }
@@ -126,27 +134,24 @@ func (p *RecurProb) queryZone(a Agent) *Msg {
 
 			found, redirect := p.findAns(msg, a)
 			if found {
+                p.AnsCode = OKAY
 				a.Log("//found")
-				p.ansZone = &ZoneServers{
-					zone.Zone,
-					[]*NameServer{&NameServer{
-						server.Name,
-						[]*IPv4{ip},
-					}},
-				}
+                p.AnsZone = zone
 				p.nextZone(nil)
-				return msg
+				return msg // found
 			} else {
 				if redirect == nil {
+                    p.AnsCode = NONEXIST
 					a.Log("//non-exist")
 				}
 				p.nextZone(redirect)
-				return nil
+				return nil // found, but not exist
 			}
 		}
 	}
 
 	// got nothing, so set next zone to nil
+    p.AnsCode = NORESP
 	p.nextZone(nil)
 	return nil
 }
