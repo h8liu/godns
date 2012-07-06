@@ -7,13 +7,15 @@ import (
 )
 
 const (
-	AGENT_RETRY = 3
+	SOLVER_RETRY     = 3
+	SOLVER_MAX_DEPTH = 5
+	SOLVER_MAX_QUERY = 50
 )
 
 // the instruction set that a problem can use
 type Agent interface {
 	Query(host *IPv4, name *Name, t uint16) (resp *Response)
-	SolveSub(p Prob)
+	SolveSub(p Prob) bool
 	Log(s string, args ...string)
 	Cache(servers *ZoneServers)
 	QueryCache(zone *Name) *ZoneServers
@@ -37,15 +39,17 @@ type solver struct {
 	cache      *NSCache
 	rootProb   Prob
 	checkpoint time.Time
+	depth      int
+	count      int
 }
 
 func NewSolver(conn *Conn, log io.Writer) Solver {
 	return &solver{
-		conn:    conn,
-		p:       NewPson(),
-		log:     log,
-		signal:  make(chan error, 1),
-		cache:   DefNSCache,
+		conn:   conn,
+		p:      NewPson(),
+		log:    log,
+		signal: make(chan error, 1),
+		cache:  DefNSCache,
 	}
 }
 
@@ -82,7 +86,13 @@ func (s *solver) lapse(t time.Time) time.Duration {
 }
 
 func (s *solver) Query(h *IPv4, n *Name, t uint16) (resp *Response) {
-	for i := 0; i < AGENT_RETRY; i++ {
+	if s.count >= SOLVER_MAX_DEPTH {
+		s.Log("err", "too many queries")
+		return nil // max count
+	}
+	s.count++
+
+	for i := 0; i < SOLVER_RETRY; i++ {
 		s.Log("q", n.String(), TypeStr(t),
 			fmt.Sprintf("@%s", h),
 			durationStr(s.lapse(time.Now())))
@@ -105,7 +115,7 @@ func (s *solver) Query(h *IPv4, n *Name, t uint16) (resp *Response) {
 	return nil
 }
 
-func (s *solver) SolveSub(p Prob) {
+func (s *solver) SolveSub(p Prob) bool {
 	name, meta := p.Title()
 	if meta == nil {
 		s.Log(name)
@@ -113,15 +123,25 @@ func (s *solver) SolveSub(p Prob) {
 		s.Log(name, meta...)
 	}
 
+	if s.depth >= SOLVER_MAX_DEPTH {
+		s.Log("err", "too deep")
+		return false
+	}
+	s.depth++
 	s.p.Indent()
 	p.ExpandVia(s) // solve the problem
 	s.p.EndIndent()
+	s.depth--
+
+	return true
 }
 
 func (s *solver) Solve(p Prob) {
 	if s.rootProb != nil {
 		panic("agent consumed already")
 	}
+	s.count = 0
+	s.depth = 0
 	s.checkpoint = time.Now()
 	s.rootProb = p
 	s.SolveSub(p)

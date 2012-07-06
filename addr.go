@@ -15,7 +15,10 @@ func (p *AddrProb) Title() (name string, meta []string) {
 
 func (p *AddrProb) ExpandVia(a Agent) {
 	recur := NewRecurProb(p.name, A)
-	a.SolveSub(recur)
+	if !a.SolveSub(recur) {
+		return
+	}
+
 	ans := recur.Answer
 	if ans == nil {
 		return

@@ -3,7 +3,7 @@ package dns
 import (
 	"fmt"
 	"math/rand"
-    "time"
+	"time"
 )
 
 // recursively query through the DNS hierarchy
@@ -16,7 +16,7 @@ type RecurProb struct {
 	Answer  *Msg
 	AnsZone *ZoneServers
 	AnsCode int
-    History []*QueryRecord
+	History []*QueryRecord
 }
 
 type QueryRecord struct {
@@ -69,16 +69,16 @@ func (zs *ZoneServers) shuffle() *ZoneServers {
 	}
 
 	ret = shuffleServers(ret)
-    ret = append(ret, (shuffleServers(nameOnly))...)
+	ret = append(ret, (shuffleServers(nameOnly))...)
 
 	return &ZoneServers{zs.Zone, ret}
 }
 
 func NewRecurProb(name *Name, t uint16) *RecurProb {
-    return &RecurProb {
-        n:name,
-        t:t,
-    }
+	return &RecurProb{
+		n: name,
+		t: t,
+	}
 }
 
 func (p *RecurProb) StartFrom(zone *ZoneServers) {
@@ -124,17 +124,17 @@ func (p *RecurProb) queryZone(a Agent) *Msg {
 			a.Log("//as",
 				zone.Zone.String(),
 				fmt.Sprintf("@%s(%s)", server.Name.String(), ip.String()))
-            
-            hisRecord := &QueryRecord{
-                Host:ip,
-                Name:p.n,
-                Type:p.t,
-                Zone:zone.Zone,
-                Issued:time.Now(),
-            }
+
+			hisRecord := &QueryRecord{
+				Host:   ip,
+				Name:   p.n,
+				Type:   p.t,
+				Zone:   zone.Zone,
+				Issued: time.Now(),
+			}
 			resp := a.Query(ip, p.n, p.t)
-            hisRecord.Resp = resp
-            p.History = append(p.History, hisRecord)
+			hisRecord.Resp = resp
+			p.History = append(p.History, hisRecord)
 
 			if resp == nil {
 				a.Log("//unreachable", server.Name.String())
@@ -294,7 +294,7 @@ func (p *RecurProb) ExpandVia(a Agent) {
 		p.nextZone(best)
 	}
 
-    p.History = make([]*QueryRecord, 0)
+	p.History = make([]*QueryRecord, 0)
 	for p.current != nil {
 		p.Answer = p.queryZone(a)
 	}

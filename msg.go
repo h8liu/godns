@@ -169,7 +169,7 @@ func (rr *RR) PsonTo(p *Pson) {
 
 	slist = append(slist, TypeStr(rr.Type))
 	rlist, expand := rr.Rdata.pson()
-    slist = append(slist, rlist...)
+	slist = append(slist, rlist...)
 	slist = append(slist, TTLStr(rr.TTL))
 	if rr.Class != IN {
 		slist = append(slist, ClassStr(rr.Class))
@@ -282,8 +282,8 @@ func FromWire(buf []byte) (*Msg, error) {
 }
 
 func (rr *RR) String() string {
-    p := NewPson()
-    rr.PsonTo(p)
-    p.End()
-    return p.Fetch()
+	p := NewPson()
+	rr.PsonTo(p)
+	p.End()
+	return p.Fetch()
 }

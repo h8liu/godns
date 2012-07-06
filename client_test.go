@@ -35,7 +35,7 @@ func TestClient(t *testing.T) {
 	c.Solve(recProb, &buf)
 	t.Logf("\n%s", buf.String())
 
-    for _, r := range recProb.Records {
-        t.Logf("%s", r.String())
-    }
+	for _, r := range recProb.Records {
+		t.Logf("%s", r.String())
+	}
 }
