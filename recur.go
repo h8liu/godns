@@ -7,21 +7,21 @@ import (
 
 // recursively query through the DNS hierarchy
 type RecurProb struct {
-	n           *Name
-	t           uint16
-	start       *ZoneServers
-	current     *ZoneServers
-	last        *ZoneServers
-	Answer      *Msg
-	AnsZone     *ZoneServers
-    AnsCode     int
+	n       *Name
+	t       uint16
+	start   *ZoneServers
+	current *ZoneServers
+	last    *ZoneServers
+	Answer  *Msg
+	AnsZone *ZoneServers
+	AnsCode int
 }
 
 const (
-    BUSY = 0
-    OKAY = iota
-    NONEXIST
-    NORESP
+	BUSY = 0
+	OKAY = iota
+	NONEXIST
+	NORESP
 )
 
 type ZoneServers struct {
@@ -75,9 +75,8 @@ func NewRecurProb(name *Name, t uint16) *RecurProb {
 	return ret
 }
 
-// TODO: change this interface
-func (p *RecurProb) StartFrom(zone *Name, servers []*NameServer) {
-	p.start = &ZoneServers{zone, servers}
+func (p *RecurProb) StartFrom(zone *ZoneServers) {
+	p.start = zone
 }
 
 func (p *RecurProb) Title() (name string, meta []string) {
@@ -134,14 +133,14 @@ func (p *RecurProb) queryZone(a Agent) *Msg {
 
 			found, redirect := p.findAns(msg, a)
 			if found {
-                p.AnsCode = OKAY
+				p.AnsCode = OKAY
 				a.Log("//found")
-                p.AnsZone = zone
+				p.AnsZone = zone
 				p.nextZone(nil)
 				return msg // found
 			} else {
 				if redirect == nil {
-                    p.AnsCode = NONEXIST
+					p.AnsCode = NONEXIST
 					a.Log("//non-exist")
 				}
 				p.nextZone(redirect)
@@ -151,7 +150,7 @@ func (p *RecurProb) queryZone(a Agent) *Msg {
 	}
 
 	// got nothing, so set next zone to nil
-    p.AnsCode = NORESP
+	p.AnsCode = NORESP
 	p.nextZone(nil)
 	return nil
 }

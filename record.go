@@ -12,7 +12,7 @@ func NewRecordProb(name *Name, types []uint16) *RecordProb {
 }
 
 func (p *RecordProb) Title() (name string, meta []string) {
-	return "record", []string{}
+	return "record", []string{p.name.String()}
 }
 
 func (p *RecordProb) collectRecords(a Agent) {
@@ -20,31 +20,27 @@ func (p *RecordProb) collectRecords(a Agent) {
 }
 
 func (p *RecordProb) ExpandVia(a Agent) {
-    defer p.collectRecords(a)
+	defer p.collectRecords(a)
+	if len(p.types) == 0 {
+		return
+	}
 
-    // reorder types
-    if len(p.types) == 0 {
-        return
-    }
-
-	recur := NewRecurProb(p.name, p.types[0])
+	recur := NewRecurProb(p.name, A)
 	a.SolveSub(recur)
 
 	if !(recur.AnsCode == OKAY || recur.AnsCode == NONEXIST) {
 		return // error on finding the domain server
 	}
 
-    if len(p.types) == 1 {
-        return
-    }
+	// restart from here
+	authZone := recur.AnsZone
+	for _, t := range p.types[1:] {
+		if t == A {
+			continue // already probed
+		}
 
-    // restart from here
-    authZone := recur.AnsZone
-    for _, t := range p.types[1:] {
-        recur = NewRecurProb(p.name, t)
-        recur.StartFrom(authZone.Zone, authZone.Servers) 
-        // TODO: continue here
-            
-    }
-
+		recur = NewRecurProb(p.name, t)
+		recur.StartFrom(authZone)
+		a.SolveSub(recur)
+	}
 }

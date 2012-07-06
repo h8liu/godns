@@ -28,4 +28,10 @@ func TestClient(t *testing.T) {
 	for _, ip := range ap.Ips {
 		t.Logf("%s\n", ip.String())
 	}
+
+	buf.Reset()
+	recProb := NewRecordProb(makeName("google.com"),
+		[]uint16{A, NS, CNAME, SOA, TXT, MX})
+	c.Solve(recProb, &buf)
+	t.Logf("\n%s", buf.String())
 }
