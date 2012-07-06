@@ -110,13 +110,25 @@ func (p *RecurProb) queryZone(a Agent) *Msg {
 	tried := []*IPv4{}
 
 	for _, server := range zone.Servers {
-		if len(server.Ips) == 0 {
-			// TODO: ask IP first. will do this after AddrProb is done
+		ips := server.Ips
+		if len(ips) == 0 {
+			// ask for IPs here
+			addrProb := NewAddrProb(server.Name)
+			if !a.SolveSub(addrProb) {
+				continue
+			}
+			ips = addrProb.Ips
+			// nothing got
+			if ips == nil {
+				continue
+			}
+
+			if len(ips) == 0 {
+				panic("ips got from AddrProb is empty set")
+			}
 		}
-		if len(server.Ips) == 0 {
-			continue
-		}
-		for _, ip := range server.Ips {
+
+		for _, ip := range ips {
 			if haveIP(tried, ip) {
 				continue
 			}
