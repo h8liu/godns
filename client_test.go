@@ -34,4 +34,8 @@ func TestClient(t *testing.T) {
 		[]uint16{A, NS, CNAME, SOA, TXT, MX})
 	c.Solve(recProb, &buf)
 	t.Logf("\n%s", buf.String())
+
+    for _, r := range recProb.Records {
+        t.Logf("%s", r.String())
+    }
 }

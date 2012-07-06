@@ -41,11 +41,11 @@ type solver struct {
 
 func NewSolver(conn *Conn, log io.Writer) Solver {
 	return &solver{
-		conn:   conn,
-		p:      NewPson(),
-		log:    log,
-		signal: make(chan error, 1),
-		cache:  DefNSCache,
+		conn:    conn,
+		p:       NewPson(),
+		log:     log,
+		signal:  make(chan error, 1),
+		cache:   DefNSCache,
 	}
 }
 

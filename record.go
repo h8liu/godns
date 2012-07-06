@@ -3,6 +3,7 @@ package dns
 type RecordProb struct {
 	name  *Name
 	types []uint16
+    Records []*RR
 }
 
 func NewRecordProb(name *Name, types []uint16) *RecordProb {
@@ -15,18 +16,33 @@ func (p *RecordProb) Title() (name string, meta []string) {
 	return "record", []string{p.name.String()}
 }
 
-func (p *RecordProb) collectRecords(a Agent) {
+func (p *RecordProb) interested(tp uint16) bool {
+    for _, t := range p.types {
+        if t == tp {
+            return true
+        }
+    }
+    return false
+}
 
+func (p *RecordProb) collectRecords(recur *RecurProb) {
+    for _, r := range recur.History {
+        msg := r.Resp.Msg
+        records := msg.FilterINRR(func(rr *RR, seg int) bool {
+            return rr.Name.Equal(p.name) && p.interested(rr.Type)
+        })
+        p.Records = append(p.Records, records...)
+    }
 }
 
 func (p *RecordProb) ExpandVia(a Agent) {
-	defer p.collectRecords(a)
 	if len(p.types) == 0 {
 		return
 	}
 
 	recur := NewRecurProb(p.name, A)
 	a.SolveSub(recur)
+    p.collectRecords(recur)
 
 	if !(recur.AnsCode == OKAY || recur.AnsCode == NONEXIST) {
 		return // error on finding the domain server
@@ -42,5 +58,6 @@ func (p *RecordProb) ExpandVia(a Agent) {
 		recur = NewRecurProb(p.name, t)
 		recur.StartFrom(authZone)
 		a.SolveSub(recur)
+        p.collectRecords(recur)
 	}
 }
