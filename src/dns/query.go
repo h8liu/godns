@@ -8,7 +8,8 @@ import (
 	"time"
 )
 
-// maintains a dns connection for dns queries
+// connection maintains a dns connection for dns queries
+// it can only handles direct queries
 type Conn struct {
 	conn        net.PacketConn
 	jobs        map[uint16]*queryJob
@@ -27,7 +28,7 @@ type queryJob struct {
 	t        uint16
 	host     *IPv4
 	deadline time.Time
-	callback QueryCallback
+	callback func(*Response, error)
 }
 
 // a received packet
@@ -45,26 +46,20 @@ type Response struct {
 }
 
 // encapsulate background thread error
-type ConnError struct {
+type connError struct {
 	s string
 	e error
 }
 
-func (e *ConnError) Error() string {
+func (e *connError) Error() string {
 	return fmt.Sprintf("%s: %s", e.s, e.e)
 }
 
 func (c *Conn) logError(s string, e error) {
-	c.errlog <- &ConnError{s, e}
+	c.errlog <- &connError{s, e}
 }
 
-// time out error
-type TimeoutError struct {
-}
-
-func (e *TimeoutError) Error() string {
-	return "time out"
-}
+var ErrTimeout = errors.New("time out")
 
 func (c *Conn) handleRecv(msg *Msg, addr net.Addr) error {
 	switch udpa := addr.(type) {
@@ -103,7 +98,7 @@ func (c *Conn) serve() {
 		// dispatch recv queue
 		for len(c.recvQueue) > 0 {
 			recv := <-c.recvQueue
-			msg, err := FromWire(recv.buf)
+			msg, err := ParseMsg(recv.buf)
 			if err != nil {
 				c.logError("parse", err)
 			} else {
@@ -120,7 +115,7 @@ func (c *Conn) serve() {
 			toRemove := []uint16{}
 			for id, job := range c.jobs {
 				if t.After(job.deadline) {
-					job.callback(nil, new(TimeoutError))
+					job.callback(nil, ErrTimeout)
 					toRemove = append(toRemove, id)
 				}
 			}
@@ -136,10 +131,10 @@ func (c *Conn) serve() {
 		// send one if possible
 		if len(c.sendQueue) > 0 {
 			job := <-c.sendQueue
-			msg := NewQuesMsg(job.name, job.t)
+			msg := NewQuery(job.name, job.t)
 			_, b := c.jobs[msg.ID]
 			for b {
-				msg.RollID()
+				msg.RollAnID()
 				_, b = c.jobs[msg.ID]
 			}
 			buf, err := msg.Wire()
@@ -202,13 +197,11 @@ func (c *Conn) recv() {
 	c.recvClosed <- 1
 }
 
-type Logger func(error)
-
-var StderrLogger Logger = func(e error) {
+var StderrLogger = func(e error) {
 	fmt.Fprintf(os.Stderr, "%s\n", e)
 }
 
-func (c *Conn) LogWith(log Logger) {
+func (c *Conn) LogTo(f func(e error)) {
 	if c.errlog != nil {
 		close(c.errlog)
 	}
@@ -216,7 +209,7 @@ func (c *Conn) LogWith(log Logger) {
 	c.errlog = make(chan error)
 	go func() {
 		for e := range c.errlog {
-			log(e)
+			f(e)
 		}
 	}()
 }
@@ -258,12 +251,13 @@ func (c *Conn) Close() {
 }
 
 // creates a connection
+// log to stderr by default
 func NewConn() *Conn {
 	ret := new(Conn)
 	ret.conn = nil
 	ret.jobs = map[uint16]*queryJob{}
 	ret.started = false
-	ret.LogWith(StderrLogger)
+	ret.LogTo(StderrLogger)
 
 	return ret
 }
@@ -275,16 +269,14 @@ func (c *Conn) ensureStarted() error {
 	return nil
 }
 
-type QueryCallback func(*Response, error)
-
-func (c *Conn) SendQuery(h *IPv4, n *Name, t uint16, cb QueryCallback) {
+func (c *Conn) SendQuery(h *IPv4, n *Name, t uint16, callback func(*Response, error)) {
 	err := c.ensureStarted()
 	if err != nil {
-		cb(nil, err)
+		callback(nil, err)
 		return
 	}
 
-	job := &queryJob{name: n, t: t, host: h, callback: cb}
+	job := &queryJob{name: n, t: t, host: h, callback: callback}
 
 	c.sendQueue <- job
 }

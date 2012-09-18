@@ -4,6 +4,16 @@ import (
 	"time"
 )
 
+type ZoneServers struct {
+	Zone    *Name
+	Servers []*NameServer
+}
+
+type NameServer struct {
+	Name *Name
+	Ips  []*IPv4
+}
+
 // the cache is two level map: zone -> server -> ip
 // each server has an expiration date
 
@@ -22,8 +32,8 @@ type NSCache struct {
 var DefNSCache *NSCache = NewNSCache()
 
 // cache cleanup interval
-const CLEAN_INTERVAL = time.Hour / 2
-const DEFAULT_EXPIRE = time.Hour
+const _CLEAN_INTERVAL = time.Hour / 2
+const _DEFAULT_EXPIRE = time.Hour
 
 func NewNSCache() *NSCache {
 	ret := &NSCache{

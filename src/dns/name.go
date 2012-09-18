@@ -10,12 +10,12 @@ type Name struct {
 	labels []string
 }
 
-type NameError struct {
+type nameError struct {
 	name string
 	s    string
 }
 
-func (e *NameError) Error() string {
+func (e *nameError) Error() string {
 	return "name '" + e.name + "': " + e.s
 }
 
@@ -48,7 +48,8 @@ func (n *Name) String() string {
 }
 
 // for programming use, will panic on fail
-func makeName(s string) *Name {
+// use with caution
+func MakeName(s string) *Name {
 	ret, err := NewName(s)
 	if err != nil {
 		panic(fmt.Sprintf("makeName failed: %s", s))
@@ -58,11 +59,11 @@ func makeName(s string) *Name {
 
 func NewName(s string) (ret *Name, e error) {
 	if len(s) == 0 {
-		return nil, &NameError{s, "empty name"}
+		return nil, &nameError{s, "empty name"}
 	}
 
 	if len(s) > 255 {
-		return nil, &NameError{s, "name too long"}
+		return nil, &nameError{s, "name too long"}
 	}
 
 	if s[len(s)-1] != '.' {
@@ -81,7 +82,7 @@ func NewName(s string) (ret *Name, e error) {
 			c := s[i]
 			switch {
 			default:
-				return nil, &NameError{s, "special characters"}
+				return nil, &nameError{s, "special characters"}
 			case 'a' <= c && c <= 'z':
 				fallthrough
 			case 'A' <= c && c <= 'Z':
@@ -94,21 +95,21 @@ func NewName(s string) (ret *Name, e error) {
 				partlen++
 			case c == '-':
 				if last == '.' {
-					return nil, &NameError{s, "dash before dot"}
+					return nil, &nameError{s, "dash before dot"}
 				}
 				partlen++
 			case c == '.':
 				if last == '.' {
-					return nil, &NameError{s, "consecutive dot"}
+					return nil, &nameError{s, "consecutive dot"}
 				}
 				if last == '-' {
-					return nil, &NameError{s, "dash after dot"}
+					return nil, &nameError{s, "dash after dot"}
 				}
 				if partlen > 63 {
-					return nil, &NameError{s, "label too long"}
+					return nil, &nameError{s, "label too long"}
 				}
 				if partlen == 0 {
-					return nil, &NameError{s, "start with dot, empty label"}
+					return nil, &nameError{s, "start with dot, empty label"}
 				}
 				partlen = 0
 				labels = append(labels, string(s[start:i]))
@@ -118,7 +119,7 @@ func NewName(s string) (ret *Name, e error) {
 		}
 
 		if !ok {
-			return nil, &NameError{s, "all numbers, maybe IP"}
+			return nil, &nameError{s, "all numbers, maybe IP"}
 		}
 	}
 

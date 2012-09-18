@@ -4,6 +4,8 @@ import (
 	"io"
 )
 
+// client is a synchronous helper for solving simple problems
+// it will create a connection automatically
 type Client struct {
 	conn  *Conn
 	cache *NSCache
@@ -14,7 +16,7 @@ func NewClient() *Client {
 }
 
 func (c *Client) Solve(p Prob, log io.Writer) {
-	solver := NewSolver(c.conn, log)
+	solver := newSolver(c.conn, log)
 	solver.UseCache(c.cache)
 	solver.Solve(p)
 }

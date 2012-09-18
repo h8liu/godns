@@ -1,7 +1,16 @@
 package dns
 
+import (
+	"errors"
+)
+
+var (
+	errARdataSize = errors.New("A rdata: wrong size")
+	errMakeIP     = errors.New("failed on making IP from bytes")
+)
+
 type Rdata interface {
-	pson() ([]string, func(p *Pson))
+	printOut() ([]string, func(p *Printer))
 	writeTo(w *writer) error
 	readFrom(r *reader, n uint16) error
 }
@@ -11,7 +20,7 @@ type RdBytes struct {
 	Data []byte
 }
 
-func (rd *RdBytes) pson() ([]string, func(p *Pson)) {
+func (rd *RdBytes) printOut() ([]string, func(p *Printer)) {
 	return []string{}, nil
 }
 
@@ -30,7 +39,7 @@ type RdIP struct {
 	Ip *IPv4
 }
 
-func (rd *RdIP) pson() ([]string, func(p *Pson)) {
+func (rd *RdIP) printOut() ([]string, func(p *Printer)) {
 	return []string{rd.Ip.String()}, nil
 }
 
@@ -41,14 +50,14 @@ func (rd *RdIP) writeTo(w *writer) error {
 
 func (rd *RdIP) readFrom(r *reader, n uint16) (err error) {
 	if n != 4 {
-		return &ParseError{"A rdata: wrong size"}
+		return errARdataSize
 	}
 	buf := make([]byte, 4)
 	if err = r.readBytes(buf); err != nil {
 		return err
 	}
 	if rd.Ip = IPFromBytes(buf); rd.Ip == nil {
-		return &ParseError{"make ip from bytes"}
+		return errMakeIP
 	}
 	return nil
 }
@@ -58,7 +67,7 @@ type RdName struct {
 	Name *Name
 }
 
-func (r *RdName) pson() ([]string, func(p *Pson)) {
+func (r *RdName) printOut() ([]string, func(p *Printer)) {
 	return []string{r.Name.String()}, nil
 }
 

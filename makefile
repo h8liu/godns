@@ -15,4 +15,8 @@ clean:
 run: all
 	bin/run
 
+doc: all
+	godoc -http=:6060 -path=.
+
+
 # .PHONY: test

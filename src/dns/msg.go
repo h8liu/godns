@@ -28,14 +28,14 @@ type RR struct {
 	Rdata Rdata
 }
 
-func NewQuesMsg(n *Name, t uint16) (ret *Msg) {
+func NewQuery(n *Name, t uint16) (ret *Msg) {
 	ret = &Msg{0, 0,
 		make([]Ques, 0),
 		make([]RR, 0),
 		make([]RR, 0),
 		make([]RR, 0)}
 	ret.Ques = append(ret.Ques, Ques{n, t, IN}) // copy in
-	ret.RollID()
+	ret.RollAnID()
 
 	return ret
 }
@@ -75,56 +75,43 @@ func (m *Msg) FilterINRR(f func(*RR, int) bool) []*RR {
 	})
 }
 
+var typeStrs = map[uint16]string{
+	A:     "a",
+	NS:    "ns",
+	MD:    "md",
+	MF:    "mf",
+	CNAME: "cname",
+	SOA:   "soa",
+	MB:    "mb",
+	MG:    "mg",
+	MR:    "mr",
+	NULL:  "null",
+	HINFO: "hinfo",
+	MINFO: "minfo",
+	MX:    "mx",
+	TXT:   "txt",
+	AAAA:  "aaaa",
+}
+
 func TypeStr(t uint16) string {
-	switch t {
-	case A:
-		return "a"
-	case NS:
-		return "ns"
-	case MD:
-		return "md"
-	case MF:
-		return "mf"
-	case CNAME:
-		return "cname"
-	case SOA:
-		return "soa"
-	case MB:
-		return "mb"
-	case MG:
-		return "mg"
-	case MR:
-		return "mr"
-	case NULL:
-		return "null"
-	case WKS:
-		return "mks"
-	case PTR:
-		return "ptr"
-	case HINFO:
-		return "hinfo"
-	case MINFO:
-		return "minfo"
-	case MX:
-		return "mx"
-	case TXT:
-		return "txt"
-	case AAAA:
-		return "aaaa"
+	ret, has := typeStrs[t]
+	if has {
+		return ret
 	}
 	return fmt.Sprintf("t%d", t)
 }
 
+var classStrs = map[uint16]string{
+	IN: "in",
+	CS: "cs",
+	CH: "ch",
+	HS: "hs",
+}
+
 func ClassStr(t uint16) string {
-	switch t {
-	case IN:
-		return "in"
-	case CS:
-		return "cs"
-	case CH:
-		return "ch"
-	case HS:
-		return "hs"
+	ret, has := classStrs[t]
+	if has {
+		return ret
 	}
 	return fmt.Sprintf("c%d", t)
 }
@@ -153,7 +140,7 @@ func TTLStr(t uint32) string {
 	return ret
 }
 
-func (q *Ques) PsonTo(p *Pson) {
+func (q *Ques) PrintTo(p *Printer) {
 	slist := make([]string, 0)
 	if q.Type != A {
 		slist = append(slist, TypeStr(q.Type))
@@ -164,11 +151,11 @@ func (q *Ques) PsonTo(p *Pson) {
 	p.Print(q.Name.String(), slist...)
 }
 
-func (rr *RR) PsonTo(p *Pson) {
+func (rr *RR) PrintTo(p *Printer) {
 	slist := make([]string, 0)
 
 	slist = append(slist, TypeStr(rr.Type))
-	rlist, expand := rr.Rdata.pson()
+	rlist, expand := rr.Rdata.printOut()
 	slist = append(slist, rlist...)
 	slist = append(slist, TTLStr(rr.TTL))
 	if rr.Class != IN {
@@ -182,18 +169,18 @@ func (rr *RR) PsonTo(p *Pson) {
 	}
 }
 
-func psonSection(p *Pson, rrs []RR, sec string) {
+func psonSection(p *Printer, rrs []RR, sec string) {
 	if len(rrs) == 0 {
 		return
 	}
 	p.PrintIndent(sec)
 	for _, rr := range rrs {
-		rr.PsonTo(p)
+		rr.PrintTo(p)
 	}
 	p.EndIndent()
 }
 
-func (m *Msg) PsonTo(p *Pson) {
+func (m *Msg) PrintTo(p *Printer) {
 	if (m.Flags & F_RESPONSE) != F_RESPONSE {
 		p.Print("//query")
 	}
@@ -240,7 +227,7 @@ func (m *Msg) PsonTo(p *Pson) {
 	if len(m.Ques) > 0 {
 		p.PrintIndent("ques")
 		for _, q := range m.Ques {
-			q.PsonTo(p)
+			q.PrintTo(p)
 		}
 		p.EndIndent()
 	}
@@ -251,14 +238,14 @@ func (m *Msg) PsonTo(p *Pson) {
 }
 
 func (m *Msg) String() string {
-	p := NewPson()
-	m.PsonTo(p)
+	p := NewPrinter()
+	m.PrintTo(p)
 	p.End()
 
 	return p.Fetch()
 }
 
-func (m *Msg) RollID() {
+func (m *Msg) RollAnID() {
 	m.ID = uint16(rand.Uint32())
 }
 
@@ -271,7 +258,7 @@ func (m *Msg) Wire() ([]byte, error) {
 	return w.wire(), nil
 }
 
-func FromWire(buf []byte) (*Msg, error) {
+func ParseMsg(buf []byte) (*Msg, error) {
 	r := newReader(buf)
 	ret := new(Msg)
 	e := r.readMsg(ret)
@@ -282,8 +269,8 @@ func FromWire(buf []byte) (*Msg, error) {
 }
 
 func (rr *RR) String() string {
-	p := NewPson()
-	rr.PsonTo(p)
+	p := NewPrinter()
+	rr.PrintTo(p)
 	p.End()
 	return p.Fetch()
 }

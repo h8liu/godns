@@ -1,20 +1,22 @@
-package dns
+package dnsprob
 
-type AddrProb struct {
+import . "dns"
+
+type Addr struct {
 	name *Name
 	Ips  []*IPv4
 }
 
-func NewAddrProb(name *Name) *AddrProb {
-	return &AddrProb{name, nil}
+func NewAddr(name *Name) *Addr {
+	return &Addr{name, nil}
 }
 
-func (p *AddrProb) Title() (name string, meta []string) {
+func (p *Addr) Title() (name string, meta []string) {
 	return "addr", []string{p.name.String()}
 }
 
-func (p *AddrProb) ExpandVia(a Agent) {
-	recur := NewRecurProb(p.name, A)
+func (p *Addr) ExpandVia(a Agent) {
+	recur := NewRecursive(p.name, A)
 	if !a.SolveSub(recur) {
 		return
 	}

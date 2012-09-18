@@ -1,22 +1,26 @@
-package dns
+package dnsprob
 
-type RecordProb struct {
+import (
+    . "dns"
+)
+
+type Record struct {
 	name    *Name
 	types   []uint16
 	Records []*RR
 }
 
-func NewRecordProb(name *Name, types []uint16) *RecordProb {
-	ret := &RecordProb{name: name, types: make([]uint16, len(types))}
+func NewRecord(name *Name, types []uint16) *Record {
+	ret := &Record{name: name, types: make([]uint16, len(types))}
 	copy(ret.types, types)
 	return ret
 }
 
-func (p *RecordProb) Title() (name string, meta []string) {
+func (p *Record) Title() (name string, meta []string) {
 	return "record", []string{p.name.String()}
 }
 
-func (p *RecordProb) interested(tp uint16) bool {
+func (p *Record) interested(tp uint16) bool {
 	for _, t := range p.types {
 		if t == tp {
 			return true
@@ -25,7 +29,7 @@ func (p *RecordProb) interested(tp uint16) bool {
 	return false
 }
 
-func (p *RecordProb) collectRecords(recur *RecurProb) {
+func (p *Record) collectRecords(recur *Recursive) {
 	for _, r := range recur.History {
 		if r.Resp == nil {
 			continue
@@ -38,12 +42,12 @@ func (p *RecordProb) collectRecords(recur *RecurProb) {
 	}
 }
 
-func (p *RecordProb) ExpandVia(a Agent) {
+func (p *Record) ExpandVia(a Agent) {
 	if len(p.types) == 0 {
 		return
 	}
 
-	recur := NewRecurProb(p.name, A)
+	recur := NewRecursive(p.name, A)
 	if !a.SolveSub(recur) {
 		return
 	}
@@ -60,7 +64,7 @@ func (p *RecordProb) ExpandVia(a Agent) {
 			continue // already probed
 		}
 
-		recur = NewRecurProb(p.name, t)
+		recur = NewRecursive(p.name, t)
 		recur.StartFrom(authZone)
 		if !a.SolveSub(recur) {
 			return // max depth reached

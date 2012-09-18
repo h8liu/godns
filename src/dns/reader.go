@@ -3,7 +3,7 @@ package dns
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
+	"errors"
 	"io"
 	"strings"
 )
@@ -14,14 +14,14 @@ type reader struct {
 	seeker *bytes.Reader
 }
 
-// message parsing error
-type ParseError struct {
-	s string
-}
-
-func (m *ParseError) Error() string {
-	return fmt.Sprintf("parse message: %s", m.s)
-}
+var (
+	errEmptyLabel   = errors.New("empty label")
+	errDashStart    = errors.New("label starts with dash")
+	errDashEnd      = errors.New("label ends with dash")
+	errSpecialChars = errors.New("label has special characters")
+	errLongLabel    = errors.New("label too long")
+	errLongName     = errors.New("name too long")
+)
 
 func newReader(wire []byte) *reader {
 	return &reader{bytes.NewReader(wire),
@@ -67,20 +67,20 @@ func fmtLabel(b []byte) (ret string, err error) {
 	s := strings.ToLower(string(b))
 	n := len(s)
 	if n == 0 {
-		return "", &ParseError{"empty label"}
+		return "", errEmptyLabel
 	}
 
 	if s[0] == '-' {
-		return "", &ParseError{"label starts with dash"}
+		return "", errDashStart
 	}
 	if s[len(s)-1] == '-' {
-		return "", &ParseError{"label ends with dash"}
+		return "", errDashEnd
 	}
 
 	for _, c := range s {
 		switch {
 		default:
-			return "", &ParseError{"label has special characters"}
+			return "", errSpecialChars
 		case 'a' <= c && c <= 'z':
 		case '0' <= c && c <= '9':
 		case c == '_':
@@ -115,10 +115,10 @@ func (r *reader) readName() (n *Name, err error) {
 		}
 		sum += int(n) + 1
 		if n > 63 {
-			return nil, &ParseError{"label too long"}
+			return nil, errLongLabel
 		}
 		if sum > 255 {
-			return nil, &ParseError{"name too long"}
+			return nil, errLongName
 		}
 		b := make([]byte, n)
 		_, e = rin.Read(b)

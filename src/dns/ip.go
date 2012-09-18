@@ -44,6 +44,7 @@ func (ip *IPv4) String() string {
 		ip.ip[0], ip.ip[1], ip.ip[2], ip.ip[3])
 }
 
+// will return nil on parse error
 func ParseIP(s string) *IPv4 {
 	nip := net.ParseIP(s)
 	if nip == nil {

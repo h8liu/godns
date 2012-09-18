@@ -1,13 +1,14 @@
-package dns
+package dnsprob
 
 import (
 	"fmt"
 	"math/rand"
 	"time"
+    . "dns"
 )
 
 // recursively query through the DNS hierarchy
-type RecurProb struct {
+type Recursive struct {
 	n       *Name
 	t       uint16
 	start   *ZoneServers
@@ -19,6 +20,7 @@ type RecurProb struct {
 	History []*QueryRecord
 }
 
+// to record the query history for recursive query problems
 type QueryRecord struct {
 	Host   *IPv4
 	Name   *Name
@@ -35,15 +37,6 @@ const (
 	NORESP
 )
 
-type ZoneServers struct {
-	Zone    *Name
-	Servers []*NameServer
-}
-
-type NameServer struct {
-	Name *Name
-	Ips  []*IPv4
-}
 
 func shuffleServers(servers []*NameServer) []*NameServer {
 	n := len(servers)
@@ -56,7 +49,7 @@ func shuffleServers(servers []*NameServer) []*NameServer {
 	return ret
 }
 
-func (zs *ZoneServers) shuffle() *ZoneServers {
+func shuffle(zs *ZoneServers) *ZoneServers {
 	ret := []*NameServer{}
 	nameOnly := []*NameServer{}
 
@@ -74,18 +67,18 @@ func (zs *ZoneServers) shuffle() *ZoneServers {
 	return &ZoneServers{zs.Zone, ret}
 }
 
-func NewRecurProb(name *Name, t uint16) *RecurProb {
-	return &RecurProb{
+func NewRecursive(name *Name, t uint16) *Recursive {
+	return &Recursive{
 		n: name,
 		t: t,
 	}
 }
 
-func (p *RecurProb) StartFrom(zone *ZoneServers) {
+func (p *Recursive) StartFrom(zone *ZoneServers) {
 	p.start = zone
 }
 
-func (p *RecurProb) Title() (name string, meta []string) {
+func (p *Recursive) Title() (name string, meta []string) {
 	return "recur", []string{p.n.String(), TypeStr(p.t)}
 }
 
@@ -98,33 +91,33 @@ func haveIP(ipList []*IPv4, ip *IPv4) bool {
 	return false
 }
 
-func (p *RecurProb) nextZone(zs *ZoneServers) {
+func (p *Recursive) nextZone(zs *ZoneServers) {
 	if zs != nil {
 		p.last = zs
 	}
 	p.current = zs
 }
 
-func (p *RecurProb) queryZone(a Agent) *Msg {
-	zone := p.current.shuffle()
+func (p *Recursive) queryZone(a Agent) *Msg {
+	zone := shuffle(p.current)
 	tried := []*IPv4{}
 
 	for _, server := range zone.Servers {
 		ips := server.Ips
 		if len(ips) == 0 {
 			// ask for IPs here
-			addrProb := NewAddrProb(server.Name)
-			if !a.SolveSub(addrProb) {
+			addr := NewAddr(server.Name)
+			if !a.SolveSub(addr) {
 				continue
 			}
-			ips = addrProb.Ips
+			ips = addr.Ips
 			// nothing got
 			if ips == nil {
 				continue
 			}
 
 			if len(ips) == 0 {
-				panic("ips got from AddrProb is empty set")
+				panic("ips got from Addr is empty set")
 			}
 		}
 
@@ -184,7 +177,7 @@ func (p *RecurProb) queryZone(a Agent) *Msg {
 	return nil
 }
 
-func (p *RecurProb) findAns(msg *Msg, a Agent) (bool, *ZoneServers) {
+func (p *Recursive) findAns(msg *Msg, a Agent) (bool, *ZoneServers) {
 	// look for answer
 	rrs := msg.FilterINRR(func(rr *RR, seg int) bool {
 		if !rr.Name.Equal(p.n) {
@@ -269,14 +262,14 @@ var rootServers = makeRootServers()
 func makeRootServers() *ZoneServers {
 	ns := func(n string, ip string) *NameServer {
 		return &NameServer{
-			Name: makeName(fmt.Sprintf("%s.root-servers.net", n)),
+			Name: MakeName(fmt.Sprintf("%s.root-servers.net", n)),
 			Ips:  []*IPv4{ParseIP(ip)},
 		}
 	}
 
 	// see en.wikipedia.org/wiki/Root_name_server for reference
 	// (since year 2012)
-	return &ZoneServers{Zone: makeName("."),
+	return &ZoneServers{Zone: MakeName("."),
 		Servers: []*NameServer{
 			ns("a", "192.41.0.4"),
 			ns("b", "192.228.79.201"),
@@ -295,7 +288,7 @@ func makeRootServers() *ZoneServers {
 	}
 }
 
-func (p *RecurProb) ExpandVia(a Agent) {
+func (p *Recursive) ExpandVia(a Agent) {
 	if p.start != nil {
 		p.nextZone(p.start)
 	} else {

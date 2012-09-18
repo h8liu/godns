@@ -3,7 +3,7 @@ package dns
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
+	"errors"
 )
 
 // message packer
@@ -11,14 +11,12 @@ type writer struct {
 	buf bytes.Buffer
 }
 
-// message packing error
-type PackError struct {
-	s string
-}
-
-func (m *PackError) Error() string {
-	return fmt.Sprintf("dns message: %s", m.s)
-}
+var (
+	errManyQues = errors.New("too many questions to pack")
+	errManyAnsw = errors.New("too many answers to pack")
+	errManyAuth = errors.New("too many authorities to pack")
+	errManyAddi = errors.New("too many additionals to pack")
+)
 
 func (w *writer) writeUint8(i uint8) {
 	e := binary.Write(&w.buf, binary.BigEndian, byte(i))
@@ -98,25 +96,25 @@ func (w *writer) writeMsg(m *Msg) (err error) {
 
 	n := len(m.Ques)
 	if n > 0xffff {
-		return &PackError{"too many questions"}
+		return errManyQues
 	}
 	w.writeUint16(uint16(n))
 
 	n = len(m.Answ)
 	if n > 0xffff {
-		return &PackError{"too many answers"}
+		return errManyAnsw
 	}
 	w.writeUint16(uint16(n))
 
 	n = len(m.Auth)
 	if n > 0xffff {
-		return &PackError{"too many authorities"}
+		return errManyAuth
 	}
 	w.writeUint16(uint16(n))
 
 	n = len(m.Addi)
 	if n > 0xffff {
-		return &PackError{"too many additionals"}
+		return errManyAddi
 	}
 	w.writeUint16(uint16(n))
 

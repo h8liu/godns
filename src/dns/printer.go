@@ -3,20 +3,19 @@ package dns
 import (
 	"bytes"
 	"io"
-	"strings"
 )
 
-type Pson struct {
+type Printer struct {
 	out    bytes.Buffer
 	indent uint
 	ntoken uint
 }
 
-func NewPson() *Pson {
-	return new(Pson)
+func NewPrinter() *Printer {
+	return new(Printer)
 }
 
-func (e *Pson) FlushTo(out io.Writer) (n int, err error) {
+func (e *Printer) FlushTo(out io.Writer) (n int, err error) {
 	n, err = out.Write(e.out.Bytes())
 	if err != nil {
 		return
@@ -25,15 +24,14 @@ func (e *Pson) FlushTo(out io.Writer) (n int, err error) {
 	return
 }
 
-func (e *Pson) Fetch() string {
+func (e *Printer) Fetch() string {
 	ret := string(e.out.Bytes())
 	e.out.Reset()
 	return ret
 }
 
-func (e *Pson) emit(s string) {
-	t := Tokenize(s)
-	e.emitToken(t)
+func (e *Printer) emitString(s string) {
+	e.emitToken(s)
 }
 
 func isNormal(s string) bool {
@@ -56,15 +54,7 @@ func isNormal(s string) bool {
 	return true
 }
 
-func Tokenize(s string) (t string) {
-	if isNormal(s) {
-		return s
-	}
-	s = strings.Replace(s, "'", "''", -1)
-	return "'" + s + "'"
-}
-
-func (e *Pson) emitToken(t string) {
+func (e *Printer) emitToken(t string) {
 	if e.ntoken == 0 {
 		for i := uint(0); i < e.indent; i++ {
 			e.out.Write([]byte("    "))
@@ -76,33 +66,33 @@ func (e *Pson) emitToken(t string) {
 	e.ntoken++
 }
 
-func (e *Pson) EndLine() {
+func (e *Printer) EndLine() {
 	e.out.Write([]byte("\n"))
 	e.ntoken = 0
 }
 
-func (e *Pson) Print(s string, args ...string) {
+func (e *Printer) Print(s string, args ...string) {
 	if e.ntoken != 0 {
 		e.EndLine()
 	}
-	e.emit(s)
+	e.emitString(s)
 	for _, a := range args {
-		e.emit(a)
+		e.emitString(a)
 	}
 }
 
-func (e *Pson) PrintIndent(s string, args ...string) {
+func (e *Printer) PrintIndent(s string, args ...string) {
 	e.Print(s, args...)
 	e.Indent()
 }
 
-func (e *Pson) Indent() {
+func (e *Printer) Indent() {
 	e.emitToken("{")
 	e.EndLine()
 	e.indent++
 }
 
-func (e *Pson) EndIndent() {
+func (e *Printer) EndIndent() {
 	if e.indent == 0 {
 		return // no effect
 	}
@@ -114,7 +104,7 @@ func (e *Pson) EndIndent() {
 	e.EndLine()
 }
 
-func (e *Pson) End() {
+func (e *Printer) End() {
 	if e.ntoken != 0 {
 		e.EndLine()
 	}

@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	SOLVER_RETRY     = 3
-	SOLVER_MAX_DEPTH = 5
-	SOLVER_MAX_QUERY = 50
+	_SOLVER_RETRY     = 3
+	_SOLVER_MAX_DEPTH = 5
+	_SOLVER_MAX_QUERY = 50
 )
 
 // the instruction set that a problem can use
@@ -21,11 +21,6 @@ type Agent interface {
 	QueryCache(zone *Name) *ZoneServers
 }
 
-type Solver interface {
-	Solve(p Prob)
-	UseCache(c *NSCache)
-}
-
 // a solver solves a problem recursively
 // it serves as an execution engine for a problem
 // and at the same time serves as a problem solver to the client
@@ -33,7 +28,7 @@ type Solver interface {
 // a single solver instance can only be used for solving one problem
 type solver struct {
 	conn       *Conn
-	p          *Pson
+	p          *Printer
 	log        io.Writer
 	signal     chan error
 	cache      *NSCache
@@ -43,10 +38,10 @@ type solver struct {
 	count      int
 }
 
-func NewSolver(conn *Conn, log io.Writer) Solver {
+func newSolver(conn *Conn, log io.Writer) *solver {
 	return &solver{
 		conn:   conn,
-		p:      NewPson(),
+		p:      NewPrinter(),
 		log:    log,
 		signal: make(chan error, 1),
 		cache:  DefNSCache,
@@ -86,13 +81,13 @@ func (s *solver) lapse(t time.Time) time.Duration {
 }
 
 func (s *solver) Query(h *IPv4, n *Name, t uint16) (resp *Response) {
-	if s.count >= SOLVER_MAX_QUERY {
+	if s.count >= _SOLVER_MAX_QUERY {
 		s.Log("err", fmt.Sprintf("too many queries (%d)", s.count))
 		return nil // max count
 	}
 	s.count++
 
-	for i := 0; i < SOLVER_RETRY; i++ {
+	for i := 0; i < _SOLVER_RETRY; i++ {
 		s.Log("q", n.String(), TypeStr(t),
 			fmt.Sprintf("@%s", h),
 			durationStr(s.lapse(time.Now())))
@@ -105,7 +100,7 @@ func (s *solver) Query(h *IPv4, n *Name, t uint16) (resp *Response) {
 		err := <-s.signal
 		if err == nil {
 			s.p.PrintIndent("a", durationStr(s.lapse(resp.RecvTime)))
-			resp.Msg.PsonTo(s.p)
+			resp.Msg.PrintTo(s.p)
 			s.p.EndIndent()
 			return
 		}
@@ -123,7 +118,7 @@ func (s *solver) SolveSub(p Prob) bool {
 		s.Log(name, meta...)
 	}
 
-	if s.depth >= SOLVER_MAX_DEPTH {
+	if s.depth >= _SOLVER_MAX_DEPTH {
 		s.Log("err", "too deep")
 		return false
 	}
