@@ -30,6 +30,7 @@ type QueryRecord struct {
 	Resp   *Response
 }
 
+// answer codes
 const (
 	BUSY = 0
 	OKAY = iota
