@@ -13,7 +13,7 @@ const (
 )
 
 // the instruction set that a problem can use
-type Agent interface {
+type ProbAgent interface {
 	Query(host *IPv4, name *Name, t uint16) (resp *Response)
 	SolveSub(p Prob) bool
 	Log(s string, args ...string)
@@ -148,7 +148,7 @@ func (s *solver) Log(str string, args ...string) {
 }
 
 func (s *solver) Cache(servers *ZoneServers) {
-	s.cache.AddZone(servers)
+	s.cache.Add(servers)
 }
 
 func (s *solver) QueryCache(zone *Name) *ZoneServers {

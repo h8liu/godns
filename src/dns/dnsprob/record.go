@@ -1,7 +1,7 @@
 package dnsprob
 
 import (
-    . "dns"
+	. "dns"
 )
 
 type Record struct {
@@ -42,7 +42,7 @@ func (p *Record) collectRecords(recur *Recursive) {
 	}
 }
 
-func (p *Record) ExpandVia(a Agent) {
+func (p *Record) ExpandVia(a ProbAgent) {
 	if len(p.types) == 0 {
 		return
 	}
@@ -65,7 +65,7 @@ func (p *Record) ExpandVia(a Agent) {
 		}
 
 		recur = NewRecursive(p.name, t)
-		recur.StartFrom(authZone)
+		recur.StartsWith(authZone)
 		if !a.SolveSub(recur) {
 			return // max depth reached
 		}

@@ -108,4 +108,8 @@ func (e *Printer) End() {
 	if e.ntoken != 0 {
 		e.EndLine()
 	}
+
+	for e.indent > 0 {
+		e.EndIndent()
+	}
 }

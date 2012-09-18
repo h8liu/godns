@@ -68,17 +68,18 @@ func (c *NSCache) BestFor(name *Name) *ZoneServers {
 	return nil
 }
 
-func (c *NSCache) AddZone(zs *ZoneServers) {
-	c.AddServer(zs.Zone, zs.Servers...)
-}
+func (c *NSCache) Add(zs *ZoneServers) {
+	zone := zs.Zone
+	// servers := zs.Servers
 
-func (c *NSCache) AddServer(zone *Name, servers ...*NameServer) {
 	c.lock()
 	defer c.unlock()
 
 	zoneStr := zone.String()
 	_, found := c.cache[zoneStr]
 	if !found {
+
 	} else {
+
 	}
 }

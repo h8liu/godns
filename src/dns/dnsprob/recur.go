@@ -1,10 +1,10 @@
 package dnsprob
 
 import (
+	. "dns"
 	"fmt"
 	"math/rand"
 	"time"
-    . "dns"
 )
 
 // recursively query through the DNS hierarchy
@@ -36,7 +36,6 @@ const (
 	NONEXIST
 	NORESP
 )
-
 
 func shuffleServers(servers []*NameServer) []*NameServer {
 	n := len(servers)
@@ -74,7 +73,7 @@ func NewRecursive(name *Name, t uint16) *Recursive {
 	}
 }
 
-func (p *Recursive) StartFrom(zone *ZoneServers) {
+func (p *Recursive) StartsWith(zone *ZoneServers) {
 	p.start = zone
 }
 
@@ -98,7 +97,7 @@ func (p *Recursive) nextZone(zs *ZoneServers) {
 	p.current = zs
 }
 
-func (p *Recursive) queryZone(a Agent) *Msg {
+func (p *Recursive) queryZone(a ProbAgent) *Msg {
 	zone := shuffle(p.current)
 	tried := []*IPv4{}
 
@@ -177,7 +176,7 @@ func (p *Recursive) queryZone(a Agent) *Msg {
 	return nil
 }
 
-func (p *Recursive) findAns(msg *Msg, a Agent) (bool, *ZoneServers) {
+func (p *Recursive) findAns(msg *Msg, a ProbAgent) (bool, *ZoneServers) {
 	// look for answer
 	rrs := msg.FilterINRR(func(rr *RR, seg int) bool {
 		if !rr.Name.Equal(p.n) {
@@ -288,7 +287,7 @@ func makeRootServers() *ZoneServers {
 	}
 }
 
-func (p *Recursive) ExpandVia(a Agent) {
+func (p *Recursive) ExpandVia(a ProbAgent) {
 	if p.start != nil {
 		p.nextZone(p.start)
 	} else {

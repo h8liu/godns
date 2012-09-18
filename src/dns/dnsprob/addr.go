@@ -15,7 +15,7 @@ func (p *Addr) Title() (name string, meta []string) {
 	return "addr", []string{p.name.String()}
 }
 
-func (p *Addr) ExpandVia(a Agent) {
+func (p *Addr) ExpandVia(a ProbAgent) {
 	recur := NewRecursive(p.name, A)
 	if !a.SolveSub(recur) {
 		return
