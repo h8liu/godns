@@ -9,6 +9,9 @@ all:
 fmt:
 	@ GOPATH=`pwd` go fmt ./src/... 
 
+test:
+	GOPATH=`pwd` go test -v ./src/...
+
 clean:
 	-rm -r bin pkg
 

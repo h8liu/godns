@@ -1,7 +1,8 @@
-package dns
+package dnsprob
 
 import (
 	"bytes"
+	. "dns"
 	"testing"
 )
 
@@ -9,7 +10,7 @@ func TestClient(t *testing.T) {
 	c := NewClient()
 
 	// query
-	resp, err := c.Query(ParseIP("198.41.0.4"), makeName("liulonnie.net"), A)
+	resp, err := c.Query(ParseIP("198.41.0.4"), MakeName("liulonnie.net"), A)
 	if err != nil {
 		t.Fatalf("query: %s", err)
 	}
@@ -17,12 +18,12 @@ func TestClient(t *testing.T) {
 
 	// solve
 	var buf bytes.Buffer
-	rp := NewRecurProb(makeName("liulonnie.net"), A)
+	rp := NewRecursive(MakeName("liulonnie.net"), A)
 	c.Solve(rp, &buf)
 	t.Logf("\n%s", buf.String())
 
 	buf.Reset()
-	ap := NewAddrProb(makeName("liulonnie2.net"))
+	ap := NewAddr(MakeName("liulonnie2.net"))
 	c.Solve(ap, &buf)
 	t.Logf("\n%s", buf.String())
 	for _, ip := range ap.Ips {
@@ -30,7 +31,7 @@ func TestClient(t *testing.T) {
 	}
 
 	buf.Reset()
-	recProb := NewRecordProb(makeName("google.com"),
+	recProb := NewRecord(MakeName("google.com"),
 		[]uint16{A, NS, CNAME, SOA, TXT, MX})
 	c.Solve(recProb, &buf)
 	t.Logf("\n%s", buf.String())
