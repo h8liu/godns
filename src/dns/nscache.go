@@ -22,64 +22,73 @@ type cacheEntry struct {
 	expire time.Time
 }
 
+type cacheRequest struct {
+	newZone   *ZoneServers // nul if not an add
+	queryZone *Name        // nul if is not an query
+	queryChan chan *ZoneServers
+}
+
 type NSCache struct {
 	cache     map[string]*cacheEntry
 	lastClean time.Time
-	syncLock  chan int
+	requests  chan *cacheRequest
 }
 
 // the default nameserver cache
-var DefNSCache *NSCache = NewNSCache()
-
-// cache cleanup interval
-const _CLEAN_INTERVAL = time.Hour / 2
-const _DEFAULT_EXPIRE = time.Hour
+var TheCache *NSCache = NewNSCache()
 
 func NewNSCache() *NSCache {
 	ret := &NSCache{
 		cache:     make(map[string]*cacheEntry),
 		lastClean: time.Now(),
-		syncLock:  make(chan int, 1),
 	}
-	ret.syncLock <- 0
+
+	go ret.serve()
+
 	return ret
 }
 
-func (c *NSCache) lock() {
-	<-c.syncLock
+func (c *NSCache) Close() {
+	close(c.requests)
 }
 
-func (c *NSCache) unlock() {
-	c.syncLock <- 0
-}
-
-func (c *NSCache) BestFor(name *Name) *ZoneServers {
-	c.lock()
-	defer c.unlock()
-
-	now := time.Now()
-	for name != nil {
-		entry, found := c.cache[name.String()]
-		if found && entry.expire.After(now) {
-			return entry.s
-		}
-		name = name.Parent()
-	}
-	return nil
+func (c *NSCache) Query(name *Name) *ZoneServers {
+	queryChan := make(chan *ZoneServers)
+	req := &cacheRequest{nil, name, queryChan}
+	c.requests <- req
+	return <-queryChan
 }
 
 func (c *NSCache) Add(zs *ZoneServers) {
-	zone := zs.Zone
-	// servers := zs.Servers
+	req := &cacheRequest{zs, nil, nil}
+	c.requests <- req
+}
 
-	c.lock()
-	defer c.unlock()
+// cache cleanup interval
+const _CLEAN_INTERVAL = time.Hour / 2
+const _DEFAULT_EXPIRE = time.Hour
 
-	zoneStr := zone.String()
-	_, found := c.cache[zoneStr]
-	if !found {
+func (c *NSCache) serve() {
+	for req := range c.requests {
+		if req.newZone != nil {
+            c.serveAdd(req.newZone)
+		}
 
-	} else {
-
+		if req.queryZone != nil {
+			if req.queryChan == nil {
+				panic("req querychan empty")
+			}
+            req.queryChan <- c.serveQuery(req.queryZone)
+		}
 	}
+}
+
+func (c *NSCache) serveAdd(name *ZoneServers) {
+    // TODO
+}
+
+
+func (c *NSCache) serveQuery(name *Name) *ZoneServers {
+    // TODO
+    return nil
 }

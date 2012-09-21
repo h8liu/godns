@@ -12,7 +12,7 @@ type Client struct {
 }
 
 func NewClient() *Client {
-	return &Client{NewConn(), DefNSCache}
+	return &Client{NewConn(), TheCache}
 }
 
 func (c *Client) Solve(p Prob, log io.Writer) {

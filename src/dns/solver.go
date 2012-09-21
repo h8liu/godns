@@ -44,7 +44,7 @@ func newSolver(conn *Conn, log io.Writer) *solver {
 		p:      NewPrinter(),
 		log:    log,
 		signal: make(chan error, 1),
-		cache:  DefNSCache,
+		cache:  TheCache,
 	}
 }
 
@@ -152,5 +152,5 @@ func (s *solver) Cache(servers *ZoneServers) {
 }
 
 func (s *solver) QueryCache(zone *Name) *ZoneServers {
-	return s.cache.BestFor(zone)
+	return s.cache.Query(zone)
 }
