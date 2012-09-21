@@ -23,9 +23,9 @@ type cacheEntry struct {
 }
 
 type cacheRequest struct {
-	newZone   *ZoneServers // nul if not an add
-	queryZone *Name        // nul if is not an query
-	queryChan chan *ZoneServers
+	newZone    *ZoneServers // nul if not an add
+	queryZone  *Name        // nul if is not an query
+	queryReply chan *ZoneServers
 }
 
 type NSCache struct {
@@ -53,10 +53,10 @@ func (c *NSCache) Close() {
 }
 
 func (c *NSCache) Query(name *Name) *ZoneServers {
-	queryChan := make(chan *ZoneServers)
-	req := &cacheRequest{nil, name, queryChan}
+	queryReply := make(chan *ZoneServers)
+	req := &cacheRequest{nil, name, queryReply}
 	c.requests <- req
-	return <-queryChan
+	return <-queryReply
 }
 
 func (c *NSCache) Add(zs *ZoneServers) {
@@ -65,30 +65,30 @@ func (c *NSCache) Add(zs *ZoneServers) {
 }
 
 // cache cleanup interval
-const _CLEAN_INTERVAL = time.Hour / 2
+const _CLEAN_INTERVAL = time.Hour / 4
 const _DEFAULT_EXPIRE = time.Hour
 
 func (c *NSCache) serve() {
 	for req := range c.requests {
+
 		if req.newZone != nil {
-            c.serveAdd(req.newZone)
+			c.serveAdd(req.newZone)
 		}
 
 		if req.queryZone != nil {
-			if req.queryChan == nil {
-				panic("req querychan empty")
+			if req.queryReply == nil {
+				panic("req queryReply is nil")
 			}
-            req.queryChan <- c.serveQuery(req.queryZone)
+			req.queryReply <- c.serveQuery(req.queryZone)
 		}
 	}
 }
 
 func (c *NSCache) serveAdd(name *ZoneServers) {
-    // TODO
+	// TODO
 }
 
-
 func (c *NSCache) serveQuery(name *Name) *ZoneServers {
-    // TODO
-    return nil
+	// TODO
+	return nil
 }
