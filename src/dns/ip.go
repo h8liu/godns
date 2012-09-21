@@ -1,9 +1,9 @@
 package dns
 
 import (
+	"encoding/binary"
 	"fmt"
 	"net"
-    "encoding/binary"
 )
 
 var enc = binary.BigEndian
@@ -34,7 +34,7 @@ func (ip *IPv4) Bytes() []byte {
 }
 
 func (ip *IPv4) Uint() uint32 {
-    return enc.Uint32(ip.ip[:])
+	return enc.Uint32(ip.ip[:])
 }
 
 func IPFromBytes(bytes []byte) *IPv4 {

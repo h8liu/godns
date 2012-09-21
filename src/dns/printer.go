@@ -66,7 +66,7 @@ func (e *Printer) PrintIndent(args ...string) {
 }
 
 func (e *Printer) Indent() {
-    e.emitToken("{")
+	e.emitToken("{")
 	e.EndLine()
 	e.indent++
 }
@@ -79,8 +79,8 @@ func (e *Printer) EndIndent() {
 		e.EndLine()
 	}
 	e.indent--
-    e.emitToken("}")
-    e.EndLine()
+	e.emitToken("}")
+	e.EndLine()
 }
 
 func (e *Printer) End() {

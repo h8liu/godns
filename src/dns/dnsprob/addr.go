@@ -12,7 +12,7 @@ func NewAddr(name *Name) *Addr {
 }
 
 func (p *Addr) Title() (title []string) {
-    return []string{"addr", p.name.String()}
+	return []string{"addr", p.name.String()}
 }
 
 func (p *Addr) ExpandVia(a ProbAgent) {

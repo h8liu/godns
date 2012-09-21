@@ -76,17 +76,17 @@ func (m *Msg) FilterIN(f func(*RR, int) bool) []*RR {
 }
 
 func (m *Msg) ForEach(f func(*RR, int)) {
-    m.Filter(func(rr *RR, seg int) bool {
-        f(rr, seg)
-        return false
-    })
+	m.Filter(func(rr *RR, seg int) bool {
+		f(rr, seg)
+		return false
+	})
 }
 
 func (m *Msg) ForEachIN(f func(*RR, int)) {
-    m.FilterIN(func(rr *RR, seg int) bool {
-        f(rr, seg)
-        return false
-    })
+	m.FilterIN(func(rr *RR, seg int) bool {
+		f(rr, seg)
+		return false
+	})
 }
 
 var typeStrs = map[uint16]string{
@@ -156,7 +156,7 @@ func TTLStr(t uint32) string {
 
 func (q *Ques) PrintTo(p *Printer) {
 	slist := make([]string, 0, 5)
-    slist = append(slist, q.Name.String())
+	slist = append(slist, q.Name.String())
 	if q.Type != A {
 		slist = append(slist, TypeStr(q.Type))
 	}
@@ -168,7 +168,7 @@ func (q *Ques) PrintTo(p *Printer) {
 
 func (rr *RR) PrintTo(p *Printer) {
 	slist := make([]string, 0, 10)
-    slist = append(slist, rr.Name.String())
+	slist = append(slist, rr.Name.String())
 	slist = append(slist, TypeStr(rr.Type))
 	rlist, expand := rr.Rdata.printOut()
 	slist = append(slist, rlist...)
@@ -201,7 +201,7 @@ func (m *Msg) PrintTo(p *Printer) {
 	}
 
 	fstr := make([]string, 0, 5)
-    fstr = append(fstr, fmt.Sprintf("#%d", m.ID), )
+	fstr = append(fstr, fmt.Sprintf("#%d", m.ID))
 	switch {
 	case (m.Flags & F_OPMASK) == OPIQUERY:
 		fstr = append(fstr, "op=iquery")

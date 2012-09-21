@@ -3,9 +3,9 @@ package dns
 import "math/rand"
 
 type Zone struct {
-    name *Name
-    servers map[string] *NameServer
-    ips map[uint32] *Name
+	name    *Name
+	servers map[string]*NameServer
+	ips     map[uint32]*Name
 }
 
 type NameServer struct {
@@ -14,68 +14,68 @@ type NameServer struct {
 }
 
 func NewZone(name *Name) *Zone {
-    return &Zone{
-        name, 
-        make(map[string] *NameServer),
-        make(map[uint32] *Name),
-    }
+	return &Zone{
+		name,
+		make(map[string]*NameServer),
+		make(map[uint32]*Name),
+	}
 }
 
 func (old *Zone) Copy() *Zone {
-    ret := NewZone(old.name)
-    for name, server := range old.servers {
-        // only need to duplicate the map
-        ret.servers[name] = &NameServer {
-            server.Name,
-            server.IPs, // this is okay since the content will not be changed
-            // Add to the origin will replace the slice pointer
-        }
-    }
+	ret := NewZone(old.name)
+	for name, server := range old.servers {
+		// only need to duplicate the map
+		ret.servers[name] = &NameServer{
+			server.Name,
+			server.IPs, // this is okay since the content will not be changed
+			// Add to the origin will replace the slice pointer
+		}
+	}
 
-    for i, name := range old.ips {
-        ret.ips[i] = name
-    }
+	for i, name := range old.ips {
+		ret.ips[i] = name
+	}
 
-    return ret
+	return ret
 }
 
 func (self *Zone) Add(serverName *Name, ips ...*IPv4) {
-    toAdd := make([]*IPv4, 0, len(ips))
+	toAdd := make([]*IPv4, 0, len(ips))
 
-    for _, ip := range ips {
-        i := ip.Uint()
-        if self.ips[i] == nil {
-            self.ips[i] = serverName
-            toAdd = append(toAdd, ip)
-        }
-    }
+	for _, ip := range ips {
+		i := ip.Uint()
+		if self.ips[i] == nil {
+			self.ips[i] = serverName
+			toAdd = append(toAdd, ip)
+		}
+	}
 
-    nameStr := serverName.String()
-    s := self.servers[nameStr]
-    if s != nil {
-        if len(toAdd) > 0 {
-            s.IPs = append(s.IPs, toAdd...)
-        }
-        return
-    }
-    
-    self.servers[nameStr] = &NameServer{
-        serverName, 
-        toAdd,
-    }
+	nameStr := serverName.String()
+	s := self.servers[nameStr]
+	if s != nil {
+		if len(toAdd) > 0 {
+			s.IPs = append(s.IPs, toAdd...)
+		}
+		return
+	}
+
+	self.servers[nameStr] = &NameServer{
+		serverName,
+		toAdd,
+	}
 }
 
 func (self *Zone) AddName(serverName *Name) {
-    nameStr := serverName.String()
-    s := self.servers[nameStr]
-    if s != nil {
-        return
-    }
+	nameStr := serverName.String()
+	s := self.servers[nameStr]
+	if s != nil {
+		return
+	}
 
-    self.servers[nameStr] = &NameServer{
-        serverName,
-        []*IPv4 { },
-    }
+	self.servers[nameStr] = &NameServer{
+		serverName,
+		[]*IPv4{},
+	}
 }
 
 func randOrder(servers []*NameServer) []*NameServer {
@@ -108,20 +108,20 @@ func shuffle(servers []*NameServer) []*NameServer {
 }
 
 func (self *Zone) Name() *Name {
-    return self.name
+	return self.name
 }
 
 func (self *Zone) Prepare() []*NameServer {
-    servers := shuffle(self.List())
-    return servers
+	servers := shuffle(self.List())
+	return servers
 }
 
 func (self *Zone) List() []*NameServer {
-    servers := make([]*NameServer, 0, len(self.servers))
+	servers := make([]*NameServer, 0, len(self.servers))
 
-    for _, server := range self.servers {
-        servers = append(servers, server)
-    }
+	for _, server := range self.servers {
+		servers = append(servers, server)
+	}
 
-    return servers
+	return servers
 }
