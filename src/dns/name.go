@@ -70,7 +70,7 @@ func NewName(s string) (ret *Name, e error) {
 		s += "."
 	}
 
-	labels := make([]string, 0)
+	labels := make([]string, 0, 8)
 
 	last := byte('.')
 	ok := false

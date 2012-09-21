@@ -30,18 +30,18 @@ type RR struct {
 
 func NewQuery(n *Name, t uint16) (ret *Msg) {
 	ret = &Msg{0, 0,
-		make([]Ques, 0),
-		make([]RR, 0),
-		make([]RR, 0),
-		make([]RR, 0)}
+		make([]Ques, 0, 1),
+		make([]RR, 0, 10),
+		make([]RR, 0, 10),
+		make([]RR, 0, 10)}
 	ret.Ques = append(ret.Ques, Ques{n, t, IN}) // copy in
 	ret.RollAnID()
 
 	return ret
 }
 
-func (m *Msg) FilterRR(f func(*RR, int) bool) []*RR {
-	ret := []*RR{}
+func (m *Msg) Filter(f func(*RR, int) bool) []*RR {
+	ret := make([]*RR, 0, 30)
 	for i := 0; i < len(m.Answ); i++ {
 		rr := &m.Answ[i]
 		if f(rr, ANSW) {
@@ -66,13 +66,27 @@ func (m *Msg) FilterRR(f func(*RR, int) bool) []*RR {
 	return ret
 }
 
-func (m *Msg) FilterINRR(f func(*RR, int) bool) []*RR {
-	return m.FilterRR(func(rr *RR, seg int) bool {
+func (m *Msg) FilterIN(f func(*RR, int) bool) []*RR {
+	return m.Filter(func(rr *RR, seg int) bool {
 		if rr.Class != IN {
 			return false
 		}
 		return f(rr, seg)
 	})
+}
+
+func (m *Msg) ForEach(f func(*RR, int)) {
+    m.Filter(func(rr *RR, seg int) bool {
+        f(rr, seg)
+        return false
+    })
+}
+
+func (m *Msg) ForEachIN(f func(*RR, int)) {
+    m.FilterIN(func(rr *RR, seg int) bool {
+        f(rr, seg)
+        return false
+    })
 }
 
 var typeStrs = map[uint16]string{
@@ -141,19 +155,20 @@ func TTLStr(t uint32) string {
 }
 
 func (q *Ques) PrintTo(p *Printer) {
-	slist := make([]string, 0)
+	slist := make([]string, 0, 5)
+    slist = append(slist, q.Name.String())
 	if q.Type != A {
 		slist = append(slist, TypeStr(q.Type))
 	}
 	if q.Class != IN {
 		slist = append(slist, ClassStr(q.Type))
 	}
-	p.Print(q.Name.String(), slist...)
+	p.Print(slist...)
 }
 
 func (rr *RR) PrintTo(p *Printer) {
-	slist := make([]string, 0)
-
+	slist := make([]string, 0, 10)
+    slist = append(slist, rr.Name.String())
 	slist = append(slist, TypeStr(rr.Type))
 	rlist, expand := rr.Rdata.printOut()
 	slist = append(slist, rlist...)
@@ -161,7 +176,7 @@ func (rr *RR) PrintTo(p *Printer) {
 	if rr.Class != IN {
 		slist = append(slist, ClassStr(rr.Class))
 	}
-	p.Print(rr.Name.String(), slist...)
+	p.Print(slist...)
 	if expand != nil {
 		p.Indent()
 		expand(p)
@@ -185,8 +200,8 @@ func (m *Msg) PrintTo(p *Printer) {
 		p.Print("//query")
 	}
 
-	p.Print("id", fmt.Sprintf("%d", m.ID))
-	fstr := make([]string, 0)
+	fstr := make([]string, 0, 5)
+    fstr = append(fstr, fmt.Sprintf("#%d", m.ID), )
 	switch {
 	case (m.Flags & F_OPMASK) == OPIQUERY:
 		fstr = append(fstr, "op=iquery")
@@ -202,7 +217,7 @@ func (m *Msg) PrintTo(p *Printer) {
 		fstr = append(fstr, "rec-avail")
 	}
 	if len(fstr) > 0 {
-		p.Print("flag", fstr...)
+		p.Print(fstr...)
 	}
 	rcode := m.Flags & F_RCODEMASK
 	if rcode != RCODE_OKAY {

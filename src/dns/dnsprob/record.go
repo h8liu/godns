@@ -16,8 +16,8 @@ func NewRecord(name *Name, types []uint16) *Record {
 	return ret
 }
 
-func (p *Record) Title() (name string, meta []string) {
-	return "record", []string{p.name.String()}
+func (p *Record) Title() (title []string) {
+	return []string{"record", p.name.String()}
 }
 
 func (p *Record) interested(tp uint16) bool {
@@ -35,7 +35,7 @@ func (p *Record) collectRecords(recur *Recursive) {
 			continue
 		}
 		msg := r.Resp.Msg
-		records := msg.FilterINRR(func(rr *RR, seg int) bool {
+		records := msg.FilterIN(func(rr *RR, seg int) bool {
 			return rr.Name.Equal(p.name) && p.interested(rr.Type)
 		})
 		p.Records = append(p.Records, records...)

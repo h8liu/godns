@@ -16,9 +16,9 @@ const (
 type ProbAgent interface {
 	Query(host *IPv4, name *Name, t uint16) (resp *Response)
 	SolveSub(p Prob) bool
-	Log(s string, args ...string)
-	Cache(servers *ZoneServers)
-	QueryCache(zone *Name) *ZoneServers
+	Log(args ...string)
+	Cache(servers *Zone)
+	QueryCache(zone *Name) *Zone
 }
 
 // a solver solves a problem recursively
@@ -111,12 +111,8 @@ func (s *solver) Query(h *IPv4, n *Name, t uint16) (resp *Response) {
 }
 
 func (s *solver) SolveSub(p Prob) bool {
-	name, meta := p.Title()
-	if meta == nil {
-		s.Log(name)
-	} else {
-		s.Log(name, meta...)
-	}
+	title := p.Title()
+	s.Log(title...)
 
 	if s.depth >= _SOLVER_MAX_DEPTH {
 		s.Log("err", "too deep")
@@ -143,14 +139,14 @@ func (s *solver) Solve(p Prob) {
 	s.flushLog()
 }
 
-func (s *solver) Log(str string, args ...string) {
-	s.p.Print(str, args...)
+func (s *solver) Log(args ...string) {
+	s.p.Print(args...)
 }
 
-func (s *solver) Cache(servers *ZoneServers) {
-	s.cache.Add(servers)
+func (s *solver) Cache(zone *Zone) {
+	s.cache.Add(zone)
 }
 
-func (s *solver) QueryCache(zone *Name) *ZoneServers {
-	return s.cache.Query(zone)
+func (s *solver) QueryCache(name *Name) *Zone {
+	return s.cache.Query(name)
 }

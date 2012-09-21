@@ -2,6 +2,6 @@ package dns
 
 // the functions that a problem must implement
 type Prob interface {
-	Title() (name string, meta []string)
+	Title() (title []string)
 	ExpandVia(a ProbAgent)
 }

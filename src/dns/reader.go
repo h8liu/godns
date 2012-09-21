@@ -93,7 +93,7 @@ func fmtLabel(b []byte) (ret string, err error) {
 
 func (r *reader) readName() (n *Name, err error) {
 	sum := 0
-	labels := make([]string, 0)
+	labels := make([]string, 0, 5)
 	rin := r.buf
 	for {
 		n, e := rin.ReadByte()

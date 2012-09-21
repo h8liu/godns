@@ -3,7 +3,6 @@ package dnsprob
 import (
 	. "dns"
 	"fmt"
-	"math/rand"
 	"time"
 )
 
@@ -11,11 +10,11 @@ import (
 type Recursive struct {
 	n       *Name
 	t       uint16
-	start   *ZoneServers
-	current *ZoneServers
-	last    *ZoneServers
+	start   *Zone
+	current *Zone
+	last    *Zone
 	Answer  *Msg
-	AnsZone *ZoneServers
+	AnsZone *Zone
 	AnsCode int
 	History []*QueryRecord
 }
@@ -38,34 +37,6 @@ const (
 	NORESP
 )
 
-func shuffleServers(servers []*NameServer) []*NameServer {
-	n := len(servers)
-	ret := make([]*NameServer, n)
-	order := rand.Perm(n)
-	for i, ind := range order {
-		ret[i] = servers[ind]
-	}
-
-	return ret
-}
-
-func shuffle(zs *ZoneServers) *ZoneServers {
-	ret := []*NameServer{}
-	nameOnly := []*NameServer{}
-
-	for _, ns := range zs.Servers {
-		if len(ns.Ips) == 0 {
-			nameOnly = append(nameOnly, ns)
-		} else {
-			ret = append(ret, ns)
-		}
-	}
-
-	ret = shuffleServers(ret)
-	ret = append(ret, (shuffleServers(nameOnly))...)
-
-	return &ZoneServers{zs.Zone, ret}
-}
 
 func NewRecursive(name *Name, t uint16) *Recursive {
 	return &Recursive{
@@ -74,12 +45,12 @@ func NewRecursive(name *Name, t uint16) *Recursive {
 	}
 }
 
-func (p *Recursive) StartsWith(zone *ZoneServers) {
+func (p *Recursive) StartsWith(zone *Zone) {
 	p.start = zone
 }
 
-func (p *Recursive) Title() (name string, meta []string) {
-	return "recur", []string{p.n.String(), TypeStr(p.t)}
+func (p *Recursive) Title() (title []string) {
+	return []string{"recur", p.n.String(), TypeStr(p.t)}
 }
 
 func haveIP(ipList []*IPv4, ip *IPv4) bool {
@@ -91,7 +62,7 @@ func haveIP(ipList []*IPv4, ip *IPv4) bool {
 	return false
 }
 
-func (p *Recursive) nextZone(zs *ZoneServers) {
+func (p *Recursive) nextZone(zs *Zone) {
 	if zs != nil {
 		p.last = zs
 	}
@@ -99,18 +70,21 @@ func (p *Recursive) nextZone(zs *ZoneServers) {
 }
 
 func (p *Recursive) queryZone(a ProbAgent) *Msg {
-	zone := shuffle(p.current)
-	tried := []*IPv4{}
+    zone := p.current
 
-	for _, server := range zone.Servers {
-		ips := server.Ips
+    // prepare the servers 
+    servers := zone.Prepare()
+	tried := make(map[uint32] bool)
+
+	for _, server := range servers {
+		ips := server.IPs
 		if len(ips) == 0 {
 			// ask for IPs here
 			addr := NewAddr(server.Name)
 			if !a.SolveSub(addr) {
 				continue
 			}
-			ips = addr.Ips
+			ips = addr.IPs
 			// nothing got
 			if ips == nil {
 				continue
@@ -122,19 +96,23 @@ func (p *Recursive) queryZone(a ProbAgent) *Msg {
 		}
 
 		for _, ip := range ips {
-			if haveIP(tried, ip) {
-				continue
+            i := ip.Uint()
+            if tried[i] {
+                continue
 			}
-			tried = append(tried, ip)
-			a.Log("//as",
-				zone.Zone.String(),
-				fmt.Sprintf("@%s(%s)", server.Name.String(), ip.String()))
+            tried[i] = true
+
+			a.Log(fmt.Sprintf("// %s : %s(%s)",
+                zone.Name().String(),
+                server.Name.String(),
+                ip.String(),
+            ));
 
 			hisRecord := &QueryRecord{
 				Host:   ip,
 				Name:   p.n,
 				Type:   p.t,
-				Zone:   zone.Zone,
+				Zone:   zone.Name(),
 				Issued: time.Now(),
 			}
 			resp := a.Query(ip, p.n, p.t)
@@ -142,28 +120,28 @@ func (p *Recursive) queryZone(a ProbAgent) *Msg {
 			p.History = append(p.History, hisRecord)
 
 			if resp == nil {
-				a.Log("//unreachable", server.Name.String())
+				a.Log("// unreachable", server.Name.String())
 				continue
 			}
 
 			msg := resp.Msg
 			rcode := msg.Flags & F_RCODEMASK
 			if !(rcode == RCODE_OKAY || rcode == RCODE_NAMEERROR) {
-				a.Log("//svrerror", server.Name.String())
+				a.Log("// server error", server.Name.String())
 				continue
 			}
 
 			found, redirect := p.findAns(msg, a)
 			if found {
 				p.AnsCode = OKAY
-				a.Log("//found")
+				a.Log("// answer found")
 				p.AnsZone = zone
 				p.nextZone(nil)
 				return msg // found
 			} else {
 				if redirect == nil {
 					p.AnsCode = NONEXIST
-					a.Log("//non-exist")
+					a.Log("// domain does not exist")
 				}
 				p.nextZone(redirect)
 				return nil // found, but not exist
@@ -177,9 +155,9 @@ func (p *Recursive) queryZone(a ProbAgent) *Msg {
 	return nil
 }
 
-func (p *Recursive) findAns(msg *Msg, a ProbAgent) (bool, *ZoneServers) {
+func (p *Recursive) findAns(msg *Msg, a ProbAgent) (bool, *Zone) {
 	// look for answer
-	rrs := msg.FilterINRR(func(rr *RR, seg int) bool {
+	rrs := msg.FilterIN(func(rr *RR, seg int) bool {
 		if !rr.Name.Equal(p.n) {
 			return false
 		}
@@ -190,18 +168,15 @@ func (p *Recursive) findAns(msg *Msg, a ProbAgent) (bool, *ZoneServers) {
 	}
 
 	// look for redirect name servers
-	rrs = msg.FilterINRR(func(rr *RR, seg int) bool {
+	rrs = msg.FilterIN(func(rr *RR, seg int) bool {
 		if rr.Type != NS {
 			return false
 		}
 		name := rr.Name
-		if !name.SubOf(p.current.Zone) {
-			return false
+		if !name.SubOf(p.current.Name()) {
+			return false // not under current zone, not trusted
 		}
-		if !name.Equal(p.n) && !name.ParentOf(p.n) {
-			return false
-		}
-		return true
+        return name.Equal(p.n) || name.ParentOf(p.n);
 	})
 	if len(rrs) == 0 {
 		// no record found, and no redirecting either
@@ -209,9 +184,11 @@ func (p *Recursive) findAns(msg *Msg, a ProbAgent) (bool, *ZoneServers) {
 	}
 
 	subzone := rrs[0].Name // we only select the first subzone
-	redirect := &ZoneServers{subzone, []*NameServer{}}
+    redirect := NewZone(subzone)
 
-rrloop:
+    addedNSes := make(map[string] bool)
+    addedIPs := make(map[uint32] bool)
+
 	for _, rr := range rrs {
 		if !rr.Name.Equal(subzone) {
 			a.Log("warning:", "multiple subzones")
@@ -224,32 +201,36 @@ rrloop:
 		if !ok {
 			panic("redirect record is not RdName")
 		}
+        
+        nsName := nsData.Name
+        nameStr := nsName.String()
+        if addedNSes[nameStr] {
+            continue
+        }
+        addedNSes[nameStr] = true
 
-		nsName := nsData.Name
-		for _, s := range redirect.Servers {
-			if nsName.Equal(s.Name) {
-				continue rrloop
-			}
-		}
+        redirect.AddName(nsName) // in case no IP is glued
+        
+        ips := make([]*IPv4, 0, 10)
 
-		ns := &NameServer{nsName, []*IPv4{}}
-		msg.FilterINRR(func(rr *RR, seg int) bool {
+        msg.ForEachIN(func(rr *RR, seg int) {
 			if rr.Type != A || !rr.Name.Equal(nsName) {
-				return false
+				return
 			}
+
 			ipData, ok := rr.Rdata.(*RdIP)
-			if !ok || ipData.Ip == nil {
-				return false
+			if !ok || ipData.IP == nil {
+				return
 			}
-			ns.Ips = append(ns.Ips, ipData.Ip)
-			return false // handled already
+
+            i := ipData.IP.Uint()
+            if addedIPs[i] { return }
+
+            ips = append(ips, ipData.IP)
 		})
+        
+        redirect.Add(nsName, ips...)
 
-		redirect.Servers = append(redirect.Servers, ns)
-	}
-
-	if len(redirect.Servers) == 0 {
-		panic("where are my redirect servers")
 	}
 
 	a.Cache(redirect)
@@ -259,33 +240,35 @@ rrloop:
 
 var rootServers = makeRootServers()
 
-func makeRootServers() *ZoneServers {
-	ns := func(n string, ip string) *NameServer {
-		return &NameServer{
-			Name: MakeName(fmt.Sprintf("%s.root-servers.net", n)),
-			Ips:  []*IPv4{ParseIP(ip)},
-		}
+func makeRootServers() *Zone {
+    fmt.Println("making root servers")
+    ret := NewZone(MakeName("."))
+
+    // helper function for adding servers
+	ns := func(n string, ip string) {
+        ret.Add(
+            MakeName(fmt.Sprintf("%s.root-servers.net", n)),
+			ParseIP(ip),
+        )
 	}
 
 	// see en.wikipedia.org/wiki/Root_name_server for reference
 	// (since year 2012)
-	return &ZoneServers{Zone: MakeName("."),
-		Servers: []*NameServer{
-			ns("a", "192.41.0.4"),
-			ns("b", "192.228.79.201"),
-			ns("c", "192.33.4.12"),
-			ns("d", "128.8.10.90"),
-			ns("e", "192.203.230.10"),
-			ns("f", "192.5.5.241"),
-			ns("g", "192.112.36.4"),
-			ns("h", "128.63.2.53"),
-			ns("i", "192.36.148.17"),
-			ns("j", "198.41.0.10"),
-			ns("k", "193.0.14.129"),
-			ns("l", "199.7.83.42"),
-			ns("m", "202.12.27.33"),
-		},
-	}
+    // ns("a", "192.41.0.4") // Verisign
+    ns("b", "192.228.79.201") // USC-ISI
+    ns("c", "192.33.4.12")  // Cogent
+    ns("d", "128.8.10.90")  // U Maryland
+    ns("e", "192.203.230.10") // NASA
+    ns("f", "192.5.5.241") // Internet Systems Consortium
+    ns("g", "192.112.36.4") // DISA
+    ns("h", "128.63.2.53") // U.S. Army Research Lab
+    ns("i", "192.36.148.17") // Netnod
+    ns("j", "198.41.0.10") // Verisign
+    ns("k", "193.0.14.129") // RIPE NCC
+    ns("l", "199.7.83.42") // ICANN
+    ns("m", "202.12.27.33") // WIDE Project
+
+    return ret
 }
 
 func (p *Recursive) ExpandVia(a ProbAgent) {
@@ -299,7 +282,7 @@ func (p *Recursive) ExpandVia(a ProbAgent) {
 		p.nextZone(best)
 	}
 
-	p.History = make([]*QueryRecord, 0)
+	p.History = make([]*QueryRecord, 0, 50)
 	for p.current != nil {
 		p.Answer = p.queryZone(a)
 	}

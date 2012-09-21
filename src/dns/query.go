@@ -112,7 +112,7 @@ func (c *Conn) serve() {
 
 		if len(cleanTicker.C) > 0 { // time to clean time outs
 			t := time.Now()
-			toRemove := []uint16{}
+			toRemove := make([]uint16, 0, 1024)
 			for id, job := range c.jobs {
 				if t.After(job.deadline) {
 					job.callback(nil, ErrTimeout)

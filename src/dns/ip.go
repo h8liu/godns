@@ -3,7 +3,10 @@ package dns
 import (
 	"fmt"
 	"net"
+    "encoding/binary"
 )
+
+var enc = binary.BigEndian
 
 // IMPORTANT: should be treated as immutable
 type IPv4 struct {
@@ -28,6 +31,10 @@ func (ip *IPv4) Bytes() []byte {
 	ret := make([]byte, 4)
 	copy(ret, ip.ip[:])
 	return ret
+}
+
+func (ip *IPv4) Uint() uint32 {
+    return enc.Uint32(ip.ip[:])
 }
 
 func IPFromBytes(bytes []byte) *IPv4 {

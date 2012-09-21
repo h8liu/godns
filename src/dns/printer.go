@@ -34,26 +34,6 @@ func (e *Printer) emitString(s string) {
 	e.emitToken(s)
 }
 
-func isNormal(s string) bool {
-	if len(s) == 0 {
-		return false
-	}
-
-	if s[0] == '\'' {
-		return false
-	} // starts with quote
-
-	for _, c := range s {
-		if !(c >= '!' && c <= '~') {
-			return false // has other chars
-		}
-		if c == '}' || c == '{' {
-			return false
-		}
-	}
-	return true
-}
-
 func (e *Printer) emitToken(t string) {
 	if e.ntoken == 0 {
 		for i := uint(0); i < e.indent; i++ {
@@ -71,23 +51,22 @@ func (e *Printer) EndLine() {
 	e.ntoken = 0
 }
 
-func (e *Printer) Print(s string, args ...string) {
+func (e *Printer) Print(args ...string) {
 	if e.ntoken != 0 {
 		e.EndLine()
 	}
-	e.emitString(s)
 	for _, a := range args {
 		e.emitString(a)
 	}
 }
 
-func (e *Printer) PrintIndent(s string, args ...string) {
-	e.Print(s, args...)
+func (e *Printer) PrintIndent(args ...string) {
+	e.Print(args...)
 	e.Indent()
 }
 
 func (e *Printer) Indent() {
-	e.emitToken("{")
+    e.emitToken("{")
 	e.EndLine()
 	e.indent++
 }
@@ -100,8 +79,8 @@ func (e *Printer) EndIndent() {
 		e.EndLine()
 	}
 	e.indent--
-	e.emitToken("}")
-	e.EndLine()
+    e.emitToken("}")
+    e.EndLine()
 }
 
 func (e *Printer) End() {

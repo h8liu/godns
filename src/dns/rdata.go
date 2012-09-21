@@ -36,15 +36,15 @@ func (rd *RdBytes) readFrom(r *reader, n uint16) error {
 
 // for rdatas of a single ip address, like a records
 type RdIP struct {
-	Ip *IPv4
+	IP *IPv4
 }
 
 func (rd *RdIP) printOut() ([]string, func(p *Printer)) {
-	return []string{rd.Ip.String()}, nil
+	return []string{rd.IP.String()}, nil
 }
 
 func (rd *RdIP) writeTo(w *writer) error {
-	w.writeBytes(rd.Ip.Bytes())
+	w.writeBytes(rd.IP.Bytes())
 	return nil
 }
 
@@ -56,7 +56,7 @@ func (rd *RdIP) readFrom(r *reader, n uint16) (err error) {
 	if err = r.readBytes(buf); err != nil {
 		return err
 	}
-	if rd.Ip = IPFromBytes(buf); rd.Ip == nil {
+	if rd.IP = IPFromBytes(buf); rd.IP == nil {
 		return errMakeIP
 	}
 	return nil
