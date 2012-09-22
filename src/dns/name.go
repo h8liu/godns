@@ -20,6 +20,9 @@ func (e *nameError) Error() string {
 }
 
 func (n *Name) Equal(other *Name) bool {
+    if other == n {
+        return true
+    }
 	if other == nil {
 		return false
 	}

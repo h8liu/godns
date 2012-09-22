@@ -1,45 +1,45 @@
 package dns
 
-func RegPart(name *Name) (registered *Name, registrar *Name) {
-	if name.IsRoot() {
-		return name, name
-	}
+func RegParts(name *Name) (registered *Name, registrar *Name) {
+    var last *Name
+    cur := name
+    curStr := cur.String()
 
-	cur := name
-	parent := cur.Parent() // parent is not nil
-	grand := parent.Parent()
-
-	parentStr := parent.String()
-	var grandStr string
-	if grand != nil {
-		grandStr = grand.String()
-	}
+    parent := cur.Parent()
+    var parentStr string
+    if parent != nil {
+	    parentStr = parent.String()
+    }
 
 	for {
-		if grand != nil && superNames[grandStr] && !notRegNames[parentStr] {
-			return cur, parent
+		if parent != nil && superNames[parentStr] && !notRegNames[curStr] {
+			return last, cur
 		}
 
-		if regNames[parentStr] {
-			return cur, parent
-		}
+        if cur.IsRoot() {
+            return last, cur
+        }
 
-		if parent.IsRoot() {
-			return cur, parent
+		if regNames[curStr] {
+			return last, cur
 		}
 
 		// shift now, parent is not root
-		cur = parent
+		last = cur
+        cur = parent
+        curStr = parentStr
 
-		parent = grand
-		parentStr = grandStr
-
-		grand = grand.Parent()
-		if grand != nil {
-			grandStr = grand.String()
-		}
+        parent = parent.Parent()
+        if parent != nil {
+            parentStr = parent.String()
+        }
 	}
 
 	// fail safe only
 	return nil, nil
+}
+
+func IsRegistrar(name *Name) bool {
+    _, reg := RegParts(name)
+    return reg.Equal(name)
 }
