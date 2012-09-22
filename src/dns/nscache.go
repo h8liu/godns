@@ -162,11 +162,14 @@ func (c *NSCache) serveAdd(zone *Zone) {
 }
 
 func (c *NSCache) serveQuery(name *Name) *Zone {
-	entry := c.cache[name.String()]
-	now := time.Now()
-	if entry != nil && entry.expire.After(now) {
-		return entry.zone
-	}
+    for name != nil {
+        entry := c.cache[name.String()]
+        now := time.Now()
+        if entry != nil && entry.expire.After(now) {
+            return entry.zone
+        }
+        name = name.Parent()
+    }
 	return nil
 }
 
