@@ -61,6 +61,8 @@ const _CLEAN_INTERVAL = time.Hour / 4
 const _DEFAULT_EXPIRE = time.Hour
 
 func (c *NSCache) serve() {
+    cleanTicker := time.NewTicker(_CLEAN_INTERVAL)
+
 	for req := range c.requests {
 		if req.newZone != nil {
 			c.serveAdd(req.newZone)
@@ -72,6 +74,11 @@ func (c *NSCache) serve() {
 			}
 			req.queryReply <- c.serveQuery(req.queryZone)
 		}
+
+        if len(cleanTicker.C) > 0 {
+            <-cleanTicker.C
+            c.cleanUp()       
+        }
 	}
 }
 
@@ -156,8 +163,23 @@ func (c *NSCache) serveAdd(zone *Zone) {
 
 func (c *NSCache) serveQuery(name *Name) *Zone {
 	entry := c.cache[name.String()]
-	if entry != nil {
+    now := time.Now()
+	if entry != nil && entry.expire.After(now) {
 		return entry.zone
 	}
 	return nil
+}
+
+func (c *NSCache) cleanUp() {
+    toDelete := make([]string, 0, len(c.cache))
+    now := time.Now()
+    for nameStr, entry := range c.cache {
+        if entry.expire.Before(now) {
+            toDelete = append(toDelete, nameStr)
+        }
+    }
+
+    for _, nameStr := range toDelete {
+        delete(c.cache, nameStr)
+    }
 }
