@@ -3,36 +3,36 @@ package dns
 import "testing"
 
 func TestRegName(t *testing.T) {
-    o := func (n, r1, r2 *Name) {
-        reg1, reg2 := RegParts(n)
-        if (r1 == nil && reg1 != nil) || !r1.Equal(reg1) ||
-            (r2 == nil && reg2 != nil) || !r2.Equal(reg2) {
-            t.Errorf("RegParts(%s) = %s, %s   expecting: %s, %s",
-                n, reg1, reg2, r1, r2)
-        }
-    }
+	o := func(n, r1, r2 *Name) {
+		reg1, reg2 := RegParts(n)
+		if (r1 == nil && reg1 != nil) || !r1.Equal(reg1) ||
+			(r2 == nil && reg2 != nil) || !r2.Equal(reg2) {
+			t.Errorf("RegParts(%s) = %s, %s   expecting: %s, %s",
+				n, reg1, reg2, r1, r2)
+		}
+	}
 
-    p := func (n *Name, b bool) {
-        r := IsRegistrar(n)
-        if r != b {
-            t.Errorf("IsRegistrar(%s) = %t,   expecting: %t", n, r, b)
-        }
-    }
+	p := func(n *Name, b bool) {
+		r := IsRegistrar(n)
+		if r != b {
+			t.Errorf("IsRegistrar(%s) = %t,   expecting: %t", n, r, b)
+		}
+	}
 
-    o(N("."), nil, N("."))
-    o(N("com"), nil, N("com"))
-    o(N("com.cn"), nil, N("com.cn"))
-    o(N("liulonnie.net"), N("liulonnie.net"), N("net"))
-    o(N("blog.liulonnie.net"), N("liulonnie.net"), N("net"))
-    o(N("wildcard.blog.liulonnie.net"),
-        N("liulonnie.net"), N("net"))
-    o(N("www.google.com.tw"), N("google.com.tw"), N("com.tw"))
+	o(N("."), nil, N("."))
+	o(N("com"), nil, N("com"))
+	o(N("com.cn"), nil, N("com.cn"))
+	o(N("liulonnie.net"), N("liulonnie.net"), N("net"))
+	o(N("blog.liulonnie.net"), N("liulonnie.net"), N("net"))
+	o(N("wildcard.blog.liulonnie.net"),
+		N("liulonnie.net"), N("net"))
+	o(N("www.google.com.tw"), N("google.com.tw"), N("com.tw"))
 
-    p(N("."), true)
-    p(N("net"), true)
-    p(N("com.tw"), true)
-    p(N("google.com.tw"), false)
-    p(N("www.google.com.tw"), false)
-    p(N("google.com"), false)
-    p(N("google"), false)
+	p(N("."), true)
+	p(N("net"), true)
+	p(N("com.tw"), true)
+	p(N("google.com.tw"), false)
+	p(N("www.google.com.tw"), false)
+	p(N("google.com"), false)
+	p(N("google"), false)
 }

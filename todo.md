@@ -1,3 +1,1 @@
 # TODOs
-
-- registered domain name

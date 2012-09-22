@@ -234,10 +234,10 @@ func (p *Recursive) findAns(msg *Msg, a ProbAgent) (bool, *Zone) {
 
 	}
 
-    if IsRegistrar(subzone) {
-        a.Log("// caching for zone:", subzone.String())
-	    a.Cache(redirect)
-    }
+	if IsRegistrar(subzone) {
+		a.Log("// caching for zone:", subzone.String())
+		a.Cache(redirect)
+	}
 
 	return false, redirect
 }
@@ -279,7 +279,7 @@ func (p *Recursive) ExpandVia(a ProbAgent) {
 	if p.start != nil {
 		p.nextZone(p.start)
 	} else {
-        _, reg := RegParts(p.n)
+		_, reg := RegParts(p.n)
 		best := a.QueryCache(reg)
 		if best == nil {
 			best = rootServers

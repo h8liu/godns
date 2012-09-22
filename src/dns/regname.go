@@ -1,24 +1,24 @@
 package dns
 
 func RegParts(name *Name) (registered *Name, registrar *Name) {
-    var last *Name
-    cur := name
-    curStr := cur.String()
+	var last *Name
+	cur := name
+	curStr := cur.String()
 
-    parent := cur.Parent()
-    var parentStr string
-    if parent != nil {
-	    parentStr = parent.String()
-    }
+	parent := cur.Parent()
+	var parentStr string
+	if parent != nil {
+		parentStr = parent.String()
+	}
 
 	for {
 		if parent != nil && superNames[parentStr] && !notRegNames[curStr] {
 			return last, cur
 		}
 
-        if cur.IsRoot() {
-            return last, cur
-        }
+		if cur.IsRoot() {
+			return last, cur
+		}
 
 		if regNames[curStr] {
 			return last, cur
@@ -26,13 +26,13 @@ func RegParts(name *Name) (registered *Name, registrar *Name) {
 
 		// shift now, parent is not root
 		last = cur
-        cur = parent
-        curStr = parentStr
+		cur = parent
+		curStr = parentStr
 
-        parent = parent.Parent()
-        if parent != nil {
-            parentStr = parent.String()
-        }
+		parent = parent.Parent()
+		if parent != nil {
+			parentStr = parent.String()
+		}
 	}
 
 	// fail safe only
@@ -40,6 +40,6 @@ func RegParts(name *Name) (registered *Name, registrar *Name) {
 }
 
 func IsRegistrar(name *Name) bool {
-    _, reg := RegParts(name)
-    return reg.Equal(name)
+	_, reg := RegParts(name)
+	return reg.Equal(name)
 }
