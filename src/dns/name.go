@@ -159,3 +159,5 @@ func (n *Name) Parent() *Name {
 	copy(labels, n.labels[1:])
 	return &Name{labels}
 }
+
+var _n = MakeName
