@@ -2,7 +2,6 @@ package main
 
 import (
 	"dns"
-	"dns/dnsprob"
 	"fmt"
 	"os"
 )
@@ -23,17 +22,9 @@ func main() {
 	fmt.Println(resp.Msg)
 
 	fmt.Println("> dig -recursive liulonnie.net a")
-	rp := dnsprob.NewRecursive(
-		dns.N("liulonnie.net"),
-		dns.A,
-	)
-	client.Solve(rp, os.Stdout)
+	client.RecurQuery(dns.N("liulonnie.net"), dns.A, os.Stdout)
 
 	fmt.Println("(do it again to see if caching works)")
 	fmt.Println("> dig -recursive liulonnie.net a")
-	rp2 := dnsprob.NewRecursive(
-		dns.N("liulonnie.net"),
-		dns.A,
-	)
-	client.Solve(rp2, os.Stdout)
+	client.RecurQuery(dns.N("liulonnie.net"), dns.A, os.Stdout)
 }

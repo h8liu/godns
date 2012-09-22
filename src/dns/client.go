@@ -15,10 +15,18 @@ func NewClient() *Client {
 	return &Client{NewConn(), TheCache}
 }
 
-func (c *Client) Solve(p Prob, log io.Writer) {
-	solver := newSolver(c.conn, log)
+func (c *Client) Solve(p Prob, logTo io.Writer) {
+	solver := newSolver(c.conn, logTo)
 	solver.UseCache(c.cache)
 	solver.Solve(p)
+}
+
+func (c *Client) RecurQuery(n *Name, t uint16, logTo io.Writer) *ProbRecur {
+	solver := newSolver(c.conn, logTo)
+	solver.UseCache(c.cache)
+	recur := NewProbRecur(n, t)
+	solver.Solve(recur)
+	return recur
 }
 
 func (c *Client) Query(host *IPv4, name *Name, t uint16) (*Response, error) {

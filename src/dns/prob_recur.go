@@ -1,13 +1,12 @@
-package dnsprob
+package dns
 
 import (
-	. "dns"
 	"fmt"
 	"time"
 )
 
 // recursively query through the DNS hierarchy
-type Recursive struct {
+type ProbRecur struct {
 	n       *Name
 	t       uint16
 	start   *Zone
@@ -37,18 +36,18 @@ const (
 	NORESP
 )
 
-func NewRecursive(name *Name, t uint16) *Recursive {
-	return &Recursive{
+func NewProbRecur(name *Name, t uint16) *ProbRecur {
+	return &ProbRecur{
 		n: name,
 		t: t,
 	}
 }
 
-func (p *Recursive) StartsWith(zone *Zone) {
+func (p *ProbRecur) StartsWith(zone *Zone) {
 	p.start = zone
 }
 
-func (p *Recursive) Title() (title []string) {
+func (p *ProbRecur) Title() (title []string) {
 	return []string{"recur", p.n.String(), TypeStr(p.t)}
 }
 
@@ -61,14 +60,14 @@ func haveIP(ipList []*IPv4, ip *IPv4) bool {
 	return false
 }
 
-func (p *Recursive) nextZone(zs *Zone) {
+func (p *ProbRecur) nextZone(zs *Zone) {
 	if zs != nil {
 		p.last = zs
 	}
 	p.current = zs
 }
 
-func (p *Recursive) queryZone(a ProbAgent) *Msg {
+func (p *ProbRecur) queryZone(a ProbAgent) *Msg {
 	zone := p.current
 
 	// prepare the servers 
@@ -79,7 +78,7 @@ func (p *Recursive) queryZone(a ProbAgent) *Msg {
 		ips := server.IPs
 		if len(ips) == 0 {
 			// ask for IPs here
-			addr := NewAddr(server.Name)
+			addr := NewProbAddr(server.Name)
 			if !a.SolveSub(addr) {
 				continue
 			}
@@ -154,7 +153,7 @@ func (p *Recursive) queryZone(a ProbAgent) *Msg {
 	return nil
 }
 
-func (p *Recursive) findAns(msg *Msg, a ProbAgent) (bool, *Zone) {
+func (p *ProbRecur) findAns(msg *Msg, a ProbAgent) (bool, *Zone) {
 	// look for answer
 	rrs := msg.FilterIN(func(rr *RR, seg int) bool {
 		if !rr.Name.Equal(p.n) {
@@ -275,7 +274,7 @@ func makeRootServers() *Zone {
 	return ret
 }
 
-func (p *Recursive) ExpandVia(a ProbAgent) {
+func (p *ProbRecur) ExpandVia(a ProbAgent) {
 	if p.start != nil {
 		p.nextZone(p.start)
 	} else {
