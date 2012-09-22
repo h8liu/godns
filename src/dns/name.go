@@ -49,7 +49,7 @@ func (n *Name) String() string {
 
 // for programming use, will panic on fail
 // use with caution
-func MakeName(s string) *Name {
+func N(s string) *Name {
 	ret, err := NewName(s)
 	if err != nil {
 		panic(fmt.Sprintf("makeName failed: %s", s))
@@ -159,5 +159,3 @@ func (n *Name) Parent() *Name {
 	copy(labels, n.labels[1:])
 	return &Name{labels}
 }
-
-var _n = MakeName

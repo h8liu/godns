@@ -13,7 +13,7 @@ func main() {
 	fmt.Println("> dig liulonnie.net @74.220.195.131")
 	resp, err := client.Query(
 		dns.ParseIP("74.220.195.131"), // ns1.hostmonster.com
-		dns.MakeName("liulonnie.net"),
+		dns.N("liulonnie.net"),
 		dns.A,
 	)
 	if err != nil {
@@ -24,7 +24,7 @@ func main() {
 
 	fmt.Println("> dig -recursive liulonnie.net a")
 	rp := dnsprob.NewRecursive(
-		dns.MakeName("liulonnie.net"),
+		dns.N("liulonnie.net"),
 		dns.A,
 	)
 	client.Solve(rp, os.Stdout)
@@ -32,7 +32,7 @@ func main() {
 	fmt.Println("(do it again to see if caching works)")
 	fmt.Println("> dig -recursive liulonnie.net a")
 	rp2 := dnsprob.NewRecursive(
-		dns.MakeName("liulonnie.net"),
+		dns.N("liulonnie.net"),
 		dns.A,
 	)
 	client.Solve(rp2, os.Stdout)

@@ -243,12 +243,12 @@ var rootServers = makeRootServers()
 
 func makeRootServers() *Zone {
 	fmt.Println("making root servers")
-	ret := NewZone(MakeName("."))
+	ret := NewZone(N("."))
 
 	// helper function for adding servers
 	ns := func(n string, ip string) {
 		ret.Add(
-			MakeName(fmt.Sprintf("%s.root-servers.net", n)),
+			N(fmt.Sprintf("%s.root-servers.net", n)),
 			ParseIP(ip),
 		)
 	}

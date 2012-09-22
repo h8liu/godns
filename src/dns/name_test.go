@@ -20,13 +20,13 @@ func TestName(t *testing.T) {
 		t.Error("final dot not truncated on 'a.b.'")
 	}
 
-	n = MakeName(".")
+	n = N(".")
 	if !n.IsRoot() {
 		t.Error(". is not root")
 	}
 
-	n = MakeName("google.com")
-	if !n.Parent().Equal(MakeName("com")) {
+	n = N("google.com")
+	if !n.Parent().Equal(N("com")) {
 		t.Error("parent of google.com is not com")
 	}
 
