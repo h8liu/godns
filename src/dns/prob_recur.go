@@ -244,13 +244,12 @@ func (p *ProbRecur) findAns(msg *Msg, a ProbAgent) (bool, *Zone) {
 var rootServers = makeRootServers()
 
 func makeRootServers() *Zone {
-	fmt.Println("making root servers")
-	ret := NewZone(N("."))
+	ret := NewZone(Domain("."))
 
 	// helper function for adding servers
 	ns := func(n string, ip string) {
 		ret.Add(
-			N(fmt.Sprintf("%s.root-servers.net", n)),
+			Domain(fmt.Sprintf("%s.root-servers.net", n)),
 			ParseIP(ip),
 		)
 	}

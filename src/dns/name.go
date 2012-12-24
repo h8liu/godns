@@ -52,7 +52,7 @@ func (n *Name) String() string {
 
 // for programming use, will panic on fail
 // use with caution
-func N(s string) *Name {
+func Domain(s string) *Name {
 	ret, err := NewName(s)
 	if err != nil {
 		panic(fmt.Sprintf("makeName failed: %s", s))

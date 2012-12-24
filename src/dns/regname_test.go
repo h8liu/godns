@@ -19,20 +19,20 @@ func TestRegName(t *testing.T) {
 		}
 	}
 
-	o(N("."), nil, N("."))
-	o(N("com"), nil, N("com"))
-	o(N("com.cn"), nil, N("com.cn"))
-	o(N("liulonnie.net"), N("liulonnie.net"), N("net"))
-	o(N("blog.liulonnie.net"), N("liulonnie.net"), N("net"))
-	o(N("wildcard.blog.liulonnie.net"),
-		N("liulonnie.net"), N("net"))
-	o(N("www.google.com.tw"), N("google.com.tw"), N("com.tw"))
+	o(Domain("."), nil, Domain("."))
+	o(Domain("com"), nil, Domain("com"))
+	o(Domain("com.cn"), nil, Domain("com.cn"))
+	o(Domain("liulonnie.net"), Domain("liulonnie.net"), Domain("net"))
+	o(Domain("blog.liulonnie.net"), Domain("liulonnie.net"), Domain("net"))
+	o(Domain("wildcard.blog.liulonnie.net"),
+		Domain("liulonnie.net"), Domain("net"))
+	o(Domain("www.google.com.tw"), Domain("google.com.tw"), Domain("com.tw"))
 
-	p(N("."), true)
-	p(N("net"), true)
-	p(N("com.tw"), true)
-	p(N("google.com.tw"), false)
-	p(N("www.google.com.tw"), false)
-	p(N("google.com"), false)
-	p(N("google"), false)
+	p(Domain("."), true)
+	p(Domain("net"), true)
+	p(Domain("com.tw"), true)
+	p(Domain("google.com.tw"), false)
+	p(Domain("www.google.com.tw"), false)
+	p(Domain("google.com"), false)
+	p(Domain("google"), false)
 }
