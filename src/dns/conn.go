@@ -12,8 +12,8 @@ import (
 // it can only handles direct queries
 type Conn struct {
 	conn        net.PacketConn
-	jobs        map[uint16]*queryJob
-	sendQueue   chan *queryJob // scheduled queries
+	jobs        map[uint16]*request
+	sendQueue   chan *request // scheduled queries
 	recvQueue   chan *recvBuf  // received packets
 	errlog      chan error
 	closeSignal chan int
@@ -23,7 +23,7 @@ type Conn struct {
 }
 
 // an internal async query job
-type queryJob struct {
+type request struct {
 	name     *Name
 	t        uint16
 	host     *IPv4
@@ -197,7 +197,7 @@ func (c *Conn) recv() {
 	c.recvClosed <- 1
 }
 
-var StderrLogger = func(e error) {
+var stderrLogger = func(e error) {
 	fmt.Fprintf(os.Stderr, "%s\n", e)
 }
 
@@ -221,7 +221,7 @@ func (c *Conn) start() error {
 	}
 	c.conn = conn
 
-	c.sendQueue = make(chan *queryJob, 100)
+	c.sendQueue = make(chan *request, 100)
 	c.recvQueue = make(chan *recvBuf, 100)
 	c.closeSignal = make(chan int, 1)
 	c.recvClosed = make(chan int, 1)
@@ -255,9 +255,9 @@ func (c *Conn) Close() {
 func NewConn() *Conn {
 	ret := new(Conn)
 	ret.conn = nil
-	ret.jobs = map[uint16]*queryJob{}
+	ret.jobs = map[uint16]*request{}
 	ret.started = false
-	ret.LogTo(StderrLogger)
+	ret.LogTo(stderrLogger)
 
 	return ret
 }
@@ -276,7 +276,7 @@ func (c *Conn) SendQuery(h *IPv4, n *Name, t uint16, callback func(*Response, er
 		return
 	}
 
-	job := &queryJob{name: n, t: t, host: h, callback: callback}
+	job := &request{name: n, t: t, host: h, callback: callback}
 
 	c.sendQueue <- job
 }

@@ -67,7 +67,7 @@ func (p *ProbRecur) nextZone(zs *Zone) {
 	p.current = zs
 }
 
-func (p *ProbRecur) queryZone(a ProbAgent) *Msg {
+func (p *ProbRecur) queryZone(a Solver) *Msg {
 	zone := p.current
 
 	// prepare the servers 
@@ -153,7 +153,7 @@ func (p *ProbRecur) queryZone(a ProbAgent) *Msg {
 	return nil
 }
 
-func (p *ProbRecur) findAns(msg *Msg, a ProbAgent) (bool, *Zone) {
+func (p *ProbRecur) findAns(msg *Msg, a Solver) (bool, *Zone) {
 	// look for answer
 	rrs := msg.FilterIN(func(rr *RR, seg int) bool {
 		if !rr.Name.Equal(p.n) {
@@ -273,7 +273,7 @@ func makeRootServers() *Zone {
 	return ret
 }
 
-func (p *ProbRecur) ExpandVia(a ProbAgent) {
+func (p *ProbRecur) ExpandVia(a Solver) {
 	if p.start != nil {
 		p.nextZone(p.start)
 	} else {

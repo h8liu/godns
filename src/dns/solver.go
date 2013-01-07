@@ -13,7 +13,7 @@ const (
 )
 
 // the instruction set that a problem can use
-type ProbAgent interface {
+type Solver interface {
 	Query(host *IPv4, name *Name, t uint16) (resp *Response)
 	SolveSub(p Prob) bool
 	Log(args ...string)

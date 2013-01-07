@@ -13,7 +13,7 @@ func (p *ProbAddr) Title() (title []string) {
 	return []string{"addr", p.name.String()}
 }
 
-func (p *ProbAddr) ExpandVia(a ProbAgent) {
+func (p *ProbAddr) ExpandVia(a Solver) {
 	recur := NewProbRecur(p.name, A)
 	if !a.SolveSub(recur) {
 		return

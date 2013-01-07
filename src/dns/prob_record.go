@@ -38,7 +38,7 @@ func (p *ProbRecord) collectRecords(recur *ProbRecur) {
 	}
 }
 
-func (p *ProbRecord) ExpandVia(a ProbAgent) {
+func (p *ProbRecord) ExpandVia(a Solver) {
 	if len(p.types) == 0 {
 		return
 	}
