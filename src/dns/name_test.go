@@ -29,6 +29,4 @@ func TestName(t *testing.T) {
 	if !n.Parent().Equal(Domain("com")) {
 		t.Error("parent of google.com is not com")
 	}
-
-	// TODO: need more test cases
 }

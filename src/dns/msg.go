@@ -184,7 +184,7 @@ func (rr *RR) PrintTo(p *Printer) {
 	}
 }
 
-func psonSection(p *Printer, rrs []RR, sec string) {
+func printSection(p *Printer, rrs []RR, sec string) {
 	if len(rrs) == 0 {
 		return
 	}
@@ -247,9 +247,9 @@ func (m *Msg) PrintTo(p *Printer) {
 		p.EndIndent()
 	}
 
-	psonSection(p, m.Answ, "answ")
-	psonSection(p, m.Auth, "auth")
-	psonSection(p, m.Addi, "addi")
+	printSection(p, m.Answ, "answ")
+	printSection(p, m.Auth, "auth")
+	printSection(p, m.Addi, "addi")
 }
 
 func (m *Msg) String() string {
