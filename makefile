@@ -16,7 +16,7 @@ clean:
 	-rm -r bin pkg
 
 run: all
-	bin/dig+
+	bin/drill
 
 doc: all
 	godoc -http=:6060 -path=.
