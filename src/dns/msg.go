@@ -154,7 +154,7 @@ func TTLStr(t uint32) string {
 	return ret
 }
 
-func (q *Ques) PrintTo(p *Printer) {
+func (q *Ques) printTo(p *printer) {
 	slist := make([]string, 0, 5)
 	slist = append(slist, q.Name.String())
 	if q.Type != A {
@@ -166,7 +166,7 @@ func (q *Ques) PrintTo(p *Printer) {
 	p.Print(slist...)
 }
 
-func (rr *RR) PrintTo(p *Printer) {
+func (rr *RR) printTo(p *printer) {
 	slist := make([]string, 0, 10)
 	slist = append(slist, rr.Name.String())
 	slist = append(slist, TypeStr(rr.Type))
@@ -184,18 +184,18 @@ func (rr *RR) PrintTo(p *Printer) {
 	}
 }
 
-func printSection(p *Printer, rrs []RR, sec string) {
+func printSection(p *printer, rrs []RR, sec string) {
 	if len(rrs) == 0 {
 		return
 	}
 	p.PrintIndent(sec)
 	for _, rr := range rrs {
-		rr.PrintTo(p)
+		rr.printTo(p)
 	}
 	p.EndIndent()
 }
 
-func (m *Msg) PrintTo(p *Printer) {
+func (m *Msg) printTo(p *printer) {
 	if (m.Flags & F_RESPONSE) != F_RESPONSE {
 		p.Print("//query")
 	}
@@ -242,7 +242,7 @@ func (m *Msg) PrintTo(p *Printer) {
 	if len(m.Ques) > 0 {
 		p.PrintIndent("ques")
 		for _, q := range m.Ques {
-			q.PrintTo(p)
+			q.printTo(p)
 		}
 		p.EndIndent()
 	}
@@ -253,8 +253,8 @@ func (m *Msg) PrintTo(p *Printer) {
 }
 
 func (m *Msg) String() string {
-	p := NewPrinter()
-	m.PrintTo(p)
+	p := newPrinter()
+	m.printTo(p)
 	p.End()
 
 	return p.Fetch()
@@ -284,8 +284,8 @@ func ParseMsg(buf []byte) (*Msg, error) {
 }
 
 func (rr *RR) String() string {
-	p := NewPrinter()
-	rr.PrintTo(p)
+	p := newPrinter()
+	rr.printTo(p)
 	p.End()
 	return p.Fetch()
 }

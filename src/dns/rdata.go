@@ -10,7 +10,7 @@ var (
 )
 
 type Rdata interface {
-	printOut() ([]string, func(p *Printer))
+	printOut() ([]string, func(p *printer))
 	writeTo(w *writer) error
 	readFrom(r *reader, n uint16) error
 }
@@ -20,7 +20,7 @@ type RdBytes struct {
 	Data []byte
 }
 
-func (rd *RdBytes) printOut() ([]string, func(p *Printer)) {
+func (rd *RdBytes) printOut() ([]string, func(p *printer)) {
 	return []string{}, nil
 }
 
@@ -39,7 +39,7 @@ type RdIP struct {
 	IP *IPv4
 }
 
-func (rd *RdIP) printOut() ([]string, func(p *Printer)) {
+func (rd *RdIP) printOut() ([]string, func(p *printer)) {
 	return []string{rd.IP.String()}, nil
 }
 
@@ -67,7 +67,7 @@ type RdName struct {
 	Name *Name
 }
 
-func (r *RdName) printOut() ([]string, func(p *Printer)) {
+func (r *RdName) printOut() ([]string, func(p *printer)) {
 	return []string{r.Name.String()}, nil
 }
 

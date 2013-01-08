@@ -28,7 +28,7 @@ type Solver interface {
 // a single solver instance can only be used for solving one problem
 type solver struct {
 	conn       *Conn
-	p          *Printer
+	p          *printer
 	log        io.Writer
 	signal     chan error
 	cache      *NSCache
@@ -41,7 +41,7 @@ type solver struct {
 func newSolver(conn *Conn, log io.Writer) *solver {
 	return &solver{
 		conn:   conn,
-		p:      NewPrinter(),
+		p:      newPrinter(),
 		log:    log,
 		signal: make(chan error, 1),
 		cache:  TheCache,
@@ -100,7 +100,7 @@ func (s *solver) Query(h *IPv4, n *Name, t uint16) (resp *Response) {
 		err := <-s.signal
 		if err == nil {
 			s.p.PrintIndent("a", durationStr(s.lapse(resp.RecvTime)))
-			resp.Msg.PrintTo(s.p)
+			resp.Msg.printTo(s.p)
 			s.p.EndIndent()
 			return
 		}
