@@ -22,6 +22,9 @@ func main() {
 
 	fmt.Println(resp.Msg)
 
+	fmt.Println("> dig -recursive google.com a")
+	client.RecurQuery(dns.Domain("google.com"), dns.A, os.Stdout)
+
 	fmt.Println("> dig -recursive liulonnie.net a")
 	client.RecurQuery(dns.Domain("liulonnie.net"), dns.A, os.Stdout)
 
