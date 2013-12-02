@@ -4,6 +4,7 @@
 .PHONY: clean all fmt run
 
 all:
+	@ GOPATH=`pwd` go build -v ./src/...
 	@ GOPATH=`pwd` go install -v ./src/...
 
 fmt:
@@ -19,10 +20,13 @@ run: all
 	bin/drill
 
 doc: all
-	godoc -http=:6060 -path=.
+	@ GOPATH=`pwd` godoc -http=:8000
 
 vet:
 	@ GOPATH=`pwd` go vet ./src/...
+
+tags:
+	@ gotags `find src -name *.go` > tags
 
 
 # .PHONY: test
