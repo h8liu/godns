@@ -70,7 +70,7 @@ func (p *ProbRecur) nextZone(zs *Zone) {
 func (p *ProbRecur) queryZone(a Solver) *Msg {
 	zone := p.current
 
-	// prepare the servers 
+	// prepare the servers
 	servers := zone.Prepare()
 	tried := make(map[uint32]bool)
 

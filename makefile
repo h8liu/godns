@@ -4,7 +4,6 @@
 .PHONY: clean all fmt run
 
 all:
-	@ GOPATH=`pwd` go build -v ./src/...
 	@ GOPATH=`pwd` go install -v ./src/...
 
 fmt:

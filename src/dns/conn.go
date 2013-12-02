@@ -14,7 +14,7 @@ type Conn struct {
 	conn        net.PacketConn
 	jobs        map[uint16]*request
 	sendQueue   chan *request // scheduled queries
-	recvQueue   chan *recvBuf  // received packets
+	recvQueue   chan *recvBuf // received packets
 	errlog      chan error
 	closeSignal chan int
 	recvClosed  chan int

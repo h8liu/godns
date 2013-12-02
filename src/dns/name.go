@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// immutable 
+// immutable
 type Name struct {
 	labels []string
 }
