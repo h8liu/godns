@@ -21,5 +21,8 @@ run: all
 doc: all
 	godoc -http=:6060 -path=.
 
+vet:
+	@ GOPATH=`pwd` go vet ./src/...
+
 
 # .PHONY: test

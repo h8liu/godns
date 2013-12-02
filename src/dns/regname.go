@@ -34,9 +34,6 @@ func RegParts(name *Name) (registered *Name, registrar *Name) {
 			parentStr = parent.String()
 		}
 	}
-
-	// fail safe only
-	return nil, nil
 }
 
 func IsRegistrar(name *Name) bool {
