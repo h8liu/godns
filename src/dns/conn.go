@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"time"
+	// "xxd"
 )
 
 // connection maintains a dns connection for dns queries
@@ -141,6 +142,7 @@ func (c *Conn) serve() {
 			if err == nil {
 				ip := job.host.IP()
 				addr := &net.UDPAddr{IP: ip, Port: DNS_PORT}
+				// xxd.Print(buf)
 				_, err = c.conn.WriteTo(buf, addr)
 			}
 
