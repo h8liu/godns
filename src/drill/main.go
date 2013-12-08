@@ -3,7 +3,7 @@ package main
 import (
 	"dns"
 	"fmt"
-	// "os"
+	"os"
 )
 
 func main() {
@@ -22,7 +22,6 @@ func main() {
 
 	fmt.Println(resp.Msg)
 
-	/*
 	fmt.Println("> dig -recursive google.com a")
 	client.RecurQuery(dns.Domain("google.com"), dns.A, os.Stdout)
 
@@ -32,5 +31,4 @@ func main() {
 	fmt.Println("(do it again to see if caching works)")
 	fmt.Println("> dig -recursive liulonnie.net a")
 	client.RecurQuery(dns.Domain("liulonnie.net"), dns.A, os.Stdout)
-	*/
 }
