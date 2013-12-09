@@ -202,18 +202,22 @@ func (m *Msg) printTo(p *printer) {
 
 	fstr := make([]string, 0, 5)
 	fstr = append(fstr, fmt.Sprintf("#%d", m.ID))
-	switch {
-	case (m.Flags & F_OPMASK) == OPIQUERY:
+	if (m.Flags & F_OPMASK) == OPIQUERY {
 		fstr = append(fstr, "op=iquery")
-	case (m.Flags & F_OPMASK) == OPSTATUS:
+	}
+	if (m.Flags & F_OPMASK) == OPSTATUS {
 		fstr = append(fstr, "op=status")
-	case (m.Flags & F_AA) == F_AA:
+	}
+	if (m.Flags & F_AA) == F_AA {
 		fstr = append(fstr, "auth")
-	case (m.Flags & F_TC) == F_TC:
+	}
+	if (m.Flags & F_TC) == F_TC {
 		fstr = append(fstr, "trunc")
-	case (m.Flags & F_RD) == F_RD:
+	}
+	if (m.Flags & F_RD) == F_RD {
 		fstr = append(fstr, "rec-desired")
-	case (m.Flags & F_RA) == F_RA:
+	}
+	if (m.Flags & F_RA) == F_RA {
 		fstr = append(fstr, "rec-avail")
 	}
 	if len(fstr) > 0 {
