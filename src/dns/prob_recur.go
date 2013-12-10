@@ -11,7 +11,6 @@ type ProbRecur struct {
 	t       uint16
 	start   *Zone
 	current *Zone
-	last    *Zone
 	Answer  *Msg
 	AnsZone *Zone
 	AnsCode int
@@ -58,13 +57,6 @@ func haveIP(ipList []*IPv4, ip *IPv4) bool {
 		}
 	}
 	return false
-}
-
-func (p *ProbRecur) nextZone(zs *Zone) {
-	if zs != nil {
-		p.last = zs
-	}
-	p.current = zs
 }
 
 func (p *ProbRecur) queryZone(a Solver) *Msg {
@@ -134,14 +126,14 @@ func (p *ProbRecur) queryZone(a Solver) *Msg {
 				p.AnsCode = OKAY
 				a.Log("// answer found")
 				p.AnsZone = zone
-				p.nextZone(nil)
+				p.current = nil
 				return msg // found
 			} else {
 				if redirect == nil {
 					p.AnsCode = NONEXIST
 					a.Log("// domain does not exist")
 				}
-				p.nextZone(redirect)
+				p.current = redirect
 				return nil // found, but not exist
 			}
 		}
@@ -149,7 +141,7 @@ func (p *ProbRecur) queryZone(a Solver) *Msg {
 
 	// got nothing, so set next zone to nil
 	p.AnsCode = NORESP
-	p.nextZone(nil)
+	p.current = nil
 	return nil
 }
 
@@ -170,11 +162,7 @@ func (p *ProbRecur) findAns(msg *Msg, a Solver) (bool, *Zone) {
 		if rr.Type != NS {
 			return false
 		}
-		name := rr.Name
-		if !name.SubOf(p.current.Name()) {
-			return false // not under current zone, not trusted
-		}
-		return name.Equal(p.n) || name.ParentOf(p.n)
+		return rr.Name.SubOf(p.current.Name()) {
 	})
 	if len(rrs) == 0 {
 		// no record found, and no redirecting either
@@ -275,14 +263,14 @@ func makeRootServers() *Zone {
 
 func (p *ProbRecur) ExpandVia(a Solver) {
 	if p.start != nil {
-		p.nextZone(p.start)
+		p.current = p.start
 	} else {
 		_, reg := RegParts(p.n)
 		best := a.QueryCache(reg)
 		if best == nil {
 			best = rootServers
 		}
-		p.nextZone(best)
+		p.current = best
 	}
 
 	p.History = make([]*QueryRecord, 0, 50)
