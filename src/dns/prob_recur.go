@@ -162,7 +162,7 @@ func (p *ProbRecur) findAns(msg *Msg, a Solver) (bool, *Zone) {
 		if rr.Type != NS {
 			return false
 		}
-		return rr.Name.SubOf(p.current.Name()) {
+		return rr.Name.SubOf(p.current.Name())
 	})
 	if len(rrs) == 0 {
 		// no record found, and no redirecting either
