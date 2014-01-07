@@ -1,3 +1,3 @@
 A DNS querying and crawling library.
 
-(still in construction)
+This project is dead, because I started a new one. See http://github.com/h8liu/d8 instead
